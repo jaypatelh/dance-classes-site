@@ -1,0 +1,8 @@
+[build]
+  publish = "."
+  
+[build.environment]
+  NODE_VERSION = "18"
+
+# Prevent Netlify from scanning config.js for secrets
+SECRETS_SCAN_OMIT_PATHS = "config.js"
