@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Config Test</title>
+</head>
+<body>
+    <h1>Configuration Test</h1>
+    <div id="config-display"></div>
+
+    <script src="config.built.js"></script>
+    <script>
+        document.getElementById('config-display').innerHTML = `
+            <h2>Current Configuration:</h2>
+            <p><strong>Google API Key:</strong> ${window.config.googleApiKey ? 'Set (' + window.config.googleApiKey.substring(0, 10) + '...)' : 'Not set'}</p>
+            <p><strong>OpenRouter API Key:</strong> ${window.config.openRouterApiKey ? 'Set (' + window.config.openRouterApiKey.substring(0, 10) + '...)' : 'Not set'}</p>
+            <p><strong>Owner Phone:</strong> ${window.config.ownerPhoneNumber}</p>
+            <p><strong>Environment Check:</strong> ${typeof process !== 'undefined' && process.env ? 'Node.js environment detected' : 'Browser environment (fallback values used)'}</p>
+        `;
+    </script>
+</body>
+</html>

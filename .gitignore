@@ -1,0 +1,25 @@
+# Environment variables
+.env
+
+# Development config with actual keys
+config.dev.js
+
+# Built config file
+config.built.js
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
