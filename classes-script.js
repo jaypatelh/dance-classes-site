@@ -20,7 +20,7 @@ async function loadClassesFromGoogleSheets() {
         
         if (!GOOGLE_SHEET_ID) throw new Error('Google Sheet ID is not configured');
         
-        const apiKey = window.appConfig?.googleApiKey;
+        const apiKey = window.config?.googleApiKey;
         if (!apiKey || apiKey === '{{GOOGLE_API_KEY}}') {
             throw new Error('Google API key is not configured or not replaced during build');
         }

@@ -90,6 +90,7 @@ html, body {
     margin-top: 1rem;
     height: calc(100vh - 120px);
     overflow-y: auto;
+    align-content: start;
 }
 
 .class-card {
@@ -100,7 +101,6 @@ html, body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
     position: relative;
-    overflow: hidden;
 }
 
 .class-card:hover {
