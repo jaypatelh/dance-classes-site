@@ -42,6 +42,19 @@ function buildConfig() {
         '{{OWNER_PHONE_NUMBER}}': process.env.OWNER_PHONE_NUMBER || '+16509954591'
     };
     
+    // Check for required environment variables
+    const requiredVars = ['GOOGLE_API_KEY'];
+    const missingVars = requiredVars.filter(varName => !process.env[varName]);
+    
+    if (missingVars.length > 0) {
+        console.error('❌ Missing required environment variables:', missingVars);
+        console.error('Please set these environment variables in your Netlify dashboard:');
+        console.error('- Go to Site settings > Environment variables');
+        console.error('- Add GOOGLE_API_KEY with your Google Sheets API key');
+        console.error('- Optionally add OPENROUTER_API_KEY and OWNER_PHONE_NUMBER');
+        process.exit(1);
+    }
+    
     Object.entries(replacements).forEach(([placeholder, value]) => {
         configContent = configContent.replace(new RegExp(placeholder, 'g'), value);
     });
@@ -50,13 +63,15 @@ function buildConfig() {
     const outputPath = path.join(__dirname, 'config.built.js');
     fs.writeFileSync(outputPath, configContent);
     
-    console.log('Configuration built successfully!');
+    console.log('✅ Configuration built successfully!');
     console.log(`Output: ${outputPath}`);
     
     // Validate that all placeholders were replaced
     const remainingPlaceholders = configContent.match(/\{\{[^}]+\}\}/g);
     if (remainingPlaceholders) {
-        console.warn('Warning: Some placeholders were not replaced:', remainingPlaceholders);
+        console.warn('⚠️  Warning: Some placeholders were not replaced:', remainingPlaceholders);
+    } else {
+        console.log('✅ All placeholders successfully replaced');
     }
 }
 
