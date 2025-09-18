@@ -1,15 +1,26 @@
 /* Classes Page Styles */
 :root {
-    --primary-color: #4f7cff;
-    --secondary-color: #6c757d;
-    --success-color: #28a745;
-    --danger-color: #dc3545;
-    --warning-color: #ffc107;
-    --info-color: #17a2b8;
-    --light-color: #f8f9fa;
-    --dark-color: #343a40;
-    --text-color: #333;
-    --border-color: #e1e4e8;
+    --primary-color: #000000;
+    --secondary-color: #333333;
+    --accent-color: #f59e0b;
+    --text-color: #000000;
+    --light-gray: #f0f0f0;
+    --dark-gray: #e0e0e0;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --border-radius: 12px;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --card-bg: #ffffff;
+    --chat-bg: #FFF0F5;
+    --header-text: #ffffff;
+    --header-bg: #000000;
+    --user-bubble: #000000;
+    --bot-bubble: #ffffff;
+    --input-bg: #ffffff;
+    --input-border: #cccccc;
+    --input-text: #000000;
+    --border-color: #cccccc;
     --hover-color: #f6f8fa;
 }
 
@@ -22,15 +33,58 @@
 html, body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
-    color: #333;
-    background-color: #fff;
+    color: var(--text-color);
+    background: var(--chat-bg);
     height: 100%;
     margin: 0;
     padding: 0;
     overflow: hidden;
 }
 
-/* Remove container and header styles since they're not used anymore */
+/* Main header styles */
+.main-header {
+    background: var(--header-bg);
+    color: var(--header-text);
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow);
+    width: 100%;
+    height: 100px;
+    border-radius: 0;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    padding: 0;
+    margin: 0;
+}
+
+.logo {
+    height: 100px;
+    width: auto;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+}
+
+.home-btn {
+    background: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+}
+
+.home-btn:hover {
+    background: var(--secondary-color);
+}
 
 /* Filters Section */
 .filters-section {
@@ -40,6 +94,8 @@ html, body {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
     align-items: end;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .filter-group {
@@ -88,24 +144,26 @@ html, body {
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: 1rem;
     margin-top: 1rem;
-    height: calc(100vh - 120px);
+    height: calc(100vh - 220px);
     overflow-y: auto;
     align-content: start;
+    padding: 1rem;
 }
 
 .class-card {
-    background: white;
+    background: var(--card-bg);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
+    border-radius: var(--border-radius);
     padding: 1.5rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow);
     transition: all 0.3s ease;
     position: relative;
+    color: var(--text-color);
 }
 
 .class-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     border-color: var(--primary-color);
 }
 
@@ -146,7 +204,7 @@ html, body {
 }
 
 .class-description {
-    color: var(--secondary-color);
+    color: var(--text-color);
     font-size: 0.9rem;
     line-height: 1.5;
     margin-top: 1rem;
@@ -186,13 +244,18 @@ footer {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .container {
-        margin: 1rem;
-        padding: 1rem;
+    .main-header {
+        height: 80px;
+        padding: 0 15px;
     }
     
-    header h1 {
-        font-size: 2rem;
+    .logo {
+        height: 80px;
+    }
+    
+    .home-btn {
+        padding: 8px 16px;
+        font-size: 0.9rem;
     }
     
     .filters-section {
@@ -203,6 +266,7 @@ footer {
     .classes-grid {
         grid-template-columns: 1fr;
         gap: 1rem;
+        height: calc(100vh - 200px);
     }
     
     .class-card {
@@ -211,6 +275,24 @@ footer {
 }
 
 @media (max-width: 480px) {
+    .main-header {
+        height: 70px;
+        padding: 0 10px;
+    }
+    
+    .logo {
+        height: 70px;
+    }
+    
+    .home-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .classes-grid {
+        height: calc(100vh - 180px);
+    }
+    
     .class-card h3 {
         font-size: 1.1rem;
     }

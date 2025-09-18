@@ -4,12 +4,26 @@
   "description": "Dance classes website with Google Sheets integration",
   "main": "index.html",
   "scripts": {
-    "build": "node build.js",
-    "dev": "cp config.dev.js config.built.js && python3 -m http.server 3000",
-    "serve": "python3 -m http.server 3000",
-    "start": "npm run dev"
+    "build": "gulp build",
+    "build:dev": "gulp build:dev",
+    "start": "gulp serve",
+    "dev": "npm run build:dev && python3 -m http.server 8080",
+    "serve": "python3 -m http.server 8080"
   },
-  "keywords": ["dance", "classes", "website"],
+  "keywords": [
+    "dance",
+    "classes",
+    "website"
+  ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "gulp": "^4.0.2",
+    "gulp-rename": "^2.0.0",
+    "gulp-replace": "^1.1.4"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
 }
