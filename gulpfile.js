@@ -24,7 +24,7 @@ gulp.task('build:dev', gulp.parallel(
   },
   () => {
     return gulp.src('index.html')
-      .pipe(replace('config.built.js', 'config.dev.js'))
+      .pipe(replace('config.js', 'config.dev.js'))
       .pipe(rename('index.dev.html'))
       .pipe(gulp.dest('.'));
   }
