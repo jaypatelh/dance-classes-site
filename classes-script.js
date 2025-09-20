@@ -76,7 +76,7 @@ async function loadClassesFromGoogleSheets() {
 // Load classes from a specific sheet
 async function loadClassesFromSheet(sheetName, apiKey) {
     try {
-        const range = `${sheetName}!A:F`; // A-F columns only
+        const range = `${sheetName}!A:G`; // A-G columns (including Class ID)
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_SHEET_ID}/values/${encodeURIComponent(range)}?key=${apiKey}`;
         
         console.log(`Loading classes from sheet: ${sheetName}`);
@@ -108,6 +108,7 @@ async function loadClassesFromSheet(sheetName, apiKey) {
                     time: row[3] || '',           // D: Time
                     ages: row[4] || 'All Ages',   // E: Ages
                     instructor: row[5] || '',     // F: Instructor
+                    classId: row[6] || '',        // G: Class ID
                     day: sheetName,
                     styles: extractDanceStyles(row[0] || ''),
                     ageBucket: parseAgeBucket(row[4] || 'All Ages')
@@ -325,6 +326,14 @@ function displayClasses() {
                     ${cls.description}
                 </div>
             ` : ''}
+            ${cls.classId ? `
+                <div class="class-actions">
+                    <button class="register-btn" onclick="openRegistration('${cls.classId}')">
+                        <i class="fas fa-user-plus"></i>
+                        Register Now
+                    </button>
+                </div>
+            ` : ''}
         </div>
     `).join('');
 }
@@ -354,4 +363,16 @@ function showError(message) {
             <button onclick="loadClassesFromGoogleSheets()" class="btn-secondary">Try Again</button>
         </div>
     `;
+}
+
+// Open registration page in new tab
+function openRegistration(classId) {
+    if (!classId) {
+        console.error('Class ID is required for registration');
+        alert('Registration is not available for this class. Please contact the studio directly.');
+        return;
+    }
+    
+    const registrationUrl = `https://app.thestudiodirector.com/thedancecompanyoflos/portal.sd?page=Enroll&cident=${classId}`;
+    window.open(registrationUrl, '_blank');
 }
