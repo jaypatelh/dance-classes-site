@@ -5,7 +5,7 @@ let allClasses = [];
 let filteredClasses = [];
 
 // Google Sheets configuration
-const GOOGLE_SHEET_ID = '1GFYV6qiAy8fUk8nDbbnHiiOL_jzADSWgZZuzVJ55JC0';
+const GOOGLE_SHEET_ID = '1oiD4w17jVWc9_4NDAIFZpfWa4Unli5wovxxVUqzyn88';
 
 // Initialize when page loads
 window.onload = function() {
