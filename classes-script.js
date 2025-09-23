@@ -3,6 +3,8 @@
 // Global variables
 let allClasses = [];
 let filteredClasses = [];
+let masterClasses = [];
+let currentView = 'regular'; // 'regular' or 'master'
 
 // Google Sheets configuration
 const GOOGLE_SHEET_ID = '1oiD4w17jVWc9_4NDAIFZpfWa4Unli5wovxxVUqzyn88';
@@ -11,6 +13,7 @@ const GOOGLE_SHEET_ID = '1oiD4w17jVWc9_4NDAIFZpfWa4Unli5wovxxVUqzyn88';
 window.onload = function() {
     loadClassesFromGoogleSheets();
     setupFilters();
+    setupViewToggle();
 };
 
 // Load classes from Google Sheets using API v4
@@ -56,7 +59,10 @@ async function loadClassesFromGoogleSheets() {
         const classArrays = await Promise.all(allClassPromises);
         allClasses = classArrays.flat().filter(cls => cls && cls.name);
         
-        console.log(`Loaded ${allClasses.length} classes total`);
+        console.log(`Loaded ${allClasses.length} regular classes total`);
+        
+        // Load Master Classes
+        await loadMasterClasses(apiKey);
         
         // Display all classes initially
         filteredClasses = [...allClasses];
@@ -364,4 +370,149 @@ function openRegistration(classId) {
     
     const registrationUrl = `https://app.thestudiodirector.com/thedancecompanyoflos/portal.sd?page=Enroll&cident=${classId}`;
     window.open(registrationUrl, '_blank');
+}
+
+// Load Master Classes from Google Sheets
+async function loadMasterClasses(apiKey) {
+    try {
+        const range = 'Master Classes!A:G'; // A-G columns
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_SHEET_ID}/values/${encodeURIComponent(range)}?key=${apiKey}`;
+        
+        console.log('Loading Master Classes...');
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            console.warn('Failed to load Master Classes sheet:', response.status);
+            masterClasses = [];
+            return;
+        }
+        
+        const data = await response.json();
+        const rows = data.values || [];
+        
+        if (rows.length < 2) {
+            console.warn('Master Classes sheet has insufficient data');
+            masterClasses = [];
+            return;
+        }
+        
+        // Parse master classes from rows (skip header row)
+        masterClasses = [];
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (row.length >= 4 && row[0] && row[3]) { // Ensure name and date exist
+                console.log('Raw master class row data:', row);
+                const masterClass = {
+                    name: row[0] || '',           // A: Class Name
+                    description: row[1] || '',    // B: Description  
+                    choreographer: row[2] || '',  // C: Choreographer/Instructor
+                    date: row[3] || '',           // D: Date
+                    time: row[4] || '',           // E: Time
+                    ages: row[5] || 'All Ages',   // F: Ages
+                    classId: row[6] || '',        // G: Class ID
+                    type: 'master',
+                    styles: extractDanceStyles(row[0] || '')
+                };
+                console.log('Processed master class:', masterClass.name, 'date:', masterClass.date);
+                masterClasses.push(masterClass);
+            }
+        }
+        
+        console.log(`Loaded ${masterClasses.length} master classes`);
+        
+    } catch (error) {
+        console.error('Error loading Master Classes:', error);
+        masterClasses = [];
+    }
+}
+
+// Setup view toggle functionality
+function setupViewToggle() {
+    const regularBtn = document.getElementById('regular-classes-btn');
+    const masterBtn = document.getElementById('master-classes-btn');
+    const filtersSection = document.getElementById('filters-section');
+    
+    regularBtn.addEventListener('click', () => {
+        currentView = 'regular';
+        regularBtn.classList.add('active');
+        masterBtn.classList.remove('active');
+        filtersSection.style.display = 'grid';
+        
+        // Reset filters and show regular classes
+        filteredClasses = [...allClasses];
+        applyFilters();
+    });
+    
+    masterBtn.addEventListener('click', () => {
+        currentView = 'master';
+        masterBtn.classList.add('active');
+        regularBtn.classList.remove('active');
+        filtersSection.style.display = 'none';
+        
+        // Show master classes
+        displayMasterClasses();
+    });
+}
+
+// Display master classes
+function displayMasterClasses() {
+    const grid = document.getElementById('classes-grid');
+    
+    if (masterClasses.length === 0) {
+        grid.innerHTML = `
+            <div class="no-classes">
+                <i class="fas fa-star"></i>
+                <h3>No master classes available</h3>
+                <p>Check back soon for upcoming master classes with guest choreographers.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    console.log('Displaying master classes:', masterClasses.length);
+    
+    grid.innerHTML = masterClasses.map(cls => `
+        <div class="class-card master-class-card">
+            <div class="class-header">
+                <h3>${cls.name}</h3>
+                <div class="master-class-badge">
+                    <i class="fas fa-star"></i>
+                    Master Class
+                </div>
+                ${cls.classId ? `
+                    <button class="register-btn" onclick="openRegistration('${cls.classId}')">
+                        <i class="fas fa-user-plus"></i>
+                        Register
+                    </button>
+                ` : ''}
+            </div>
+            <div class="class-info">
+                <div class="class-info-item">
+                    <i class="fas fa-calendar"></i>
+                    <span>${cls.date}</span>
+                </div>
+                ${cls.time ? `
+                    <div class="class-info-item">
+                        <i class="fas fa-clock"></i>
+                        <span>${cls.time}</span>
+                    </div>
+                ` : ''}
+                <div class="class-info-item">
+                    <i class="fas fa-users"></i>
+                    <span>${cls.ages}</span>
+                </div>
+                ${cls.choreographer ? `
+                    <div class="class-info-item">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Choreographer: ${cls.choreographer}</span>
+                    </div>
+                ` : ''}
+            </div>
+            ${cls.description ? `
+                <div class="class-description">
+                    ${cls.description}
+                </div>
+            ` : ''}
+        </div>
+    `).join('');
 }
