@@ -82,7 +82,7 @@ async function loadClassesFromGoogleSheets() {
 // Load classes from a specific sheet
 async function loadClassesFromSheet(sheetName, apiKey) {
     try {
-        const range = `${sheetName}!A:G`; // A-G columns (including Class ID)
+        const range = `${sheetName}!A:H`; // A-H columns (including Class ID in column H)
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_SHEET_ID}/values/${encodeURIComponent(range)}?key=${apiKey}`;
         
         console.log(`Loading classes from sheet: ${sheetName}`);
@@ -114,12 +114,13 @@ async function loadClassesFromSheet(sheetName, apiKey) {
                     time: row[3] || '',           // D: Time
                     ages: row[4] || 'All Ages',   // E: Ages
                     instructor: row[5] || '',     // F: Instructor
-                    classId: row[6] || '',        // G: Class ID
+                    date: row[6] || '',           // G: Date (if applicable)
+                    classId: row[7] || '',        // H: Class ID
                     day: sheetName,
                     styles: extractDanceStyles(row[0] || ''),
                     ageBucket: parseAgeBucket(row[4] || 'All Ages')
                 };
-                console.log('Processed class:', classObj.name, 'ages:', classObj.ages, 'time:', classObj.time);
+                console.log('Processed class:', classObj.name, 'ages:', classObj.ages, 'time:', classObj.time, 'classId:', classObj.classId);
                 classes.push(classObj);
             }
         }
