@@ -223,12 +223,10 @@ function setupFilters() {
     const ageFilter = document.getElementById('age-filter');
     const styleFilter = document.getElementById('style-filter');
     const dayFilter = document.getElementById('day-filter');
-    const clearButton = document.getElementById('clear-filters');
     
     ageFilter.addEventListener('change', applyFilters);
     styleFilter.addEventListener('change', applyFilters);
     dayFilter.addEventListener('change', applyFilters);
-    clearButton.addEventListener('click', clearFilters);
 }
 
 // Apply filters to classes
@@ -259,15 +257,6 @@ function applyFilters() {
     displayClasses();
 }
 
-// Clear all filters
-function clearFilters() {
-    document.getElementById('age-filter').value = '';
-    document.getElementById('style-filter').value = '';
-    document.getElementById('day-filter').value = '';
-    
-    filteredClasses = [...allClasses];
-    displayClasses();
-}
 
 // Display classes in grid
 function displayClasses() {
@@ -288,7 +277,15 @@ function displayClasses() {
     
     grid.innerHTML = filteredClasses.map(cls => `
         <div class="class-card">
-            <h3>${cls.name}</h3>
+            <div class="class-header">
+                <h3>${cls.name}</h3>
+                ${cls.classId ? `
+                    <button class="register-btn" onclick="openRegistration('${cls.classId}')">
+                        <i class="fas fa-user-plus"></i>
+                        Register
+                    </button>
+                ` : ''}
+            </div>
             <div class="class-info">
                 <div class="class-info-item">
                     <i class="fas fa-clock"></i>
@@ -326,14 +323,6 @@ function displayClasses() {
                     ${cls.description}
                 </div>
             ` : ''}
-            ${cls.classId ? `
-                <div class="class-actions">
-                    <button class="register-btn" onclick="openRegistration('${cls.classId}')">
-                        <i class="fas fa-user-plus"></i>
-                        Register Now
-                    </button>
-                </div>
-            ` : ''}
         </div>
     `).join('');
 }
@@ -360,7 +349,7 @@ function showError(message) {
             <i class="fas fa-exclamation-triangle"></i>
             <h3>Error</h3>
             <p>${message}</p>
-            <button onclick="loadClassesFromGoogleSheets()" class="btn-secondary">Try Again</button>
+            <button onclick="loadClassesFromGoogleSheets()" style="background: var(--primary-color); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;">Try Again</button>
         </div>
     `;
 }
