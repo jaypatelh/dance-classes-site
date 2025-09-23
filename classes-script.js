@@ -372,10 +372,36 @@ function openRegistration(classId) {
     window.open(registrationUrl, '_blank');
 }
 
+// Parse date string into Date object for sorting
+function parseClassDate(dateString) {
+    if (!dateString) return new Date(0); // Return epoch for empty dates (sort to beginning)
+    
+    // Try to parse various date formats
+    // Common formats: MM/DD/YYYY, MM-DD-YYYY, YYYY-MM-DD, Month DD, YYYY, etc.
+    let date = new Date(dateString);
+    
+    // If direct parsing fails, try some common formats
+    if (isNaN(date.getTime())) {
+        // Try MM/DD/YYYY or MM-DD-YYYY format
+        const parts = dateString.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+        if (parts) {
+            date = new Date(parseInt(parts[3]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        }
+    }
+    
+    // If still invalid, return epoch date
+    if (isNaN(date.getTime())) {
+        console.warn('Could not parse date:', dateString);
+        return new Date(0);
+    }
+    
+    return date;
+}
+
 // Load Master Classes from Google Sheets
 async function loadMasterClasses(apiKey) {
     try {
-        const range = 'Master Classes!A:G'; // A-G columns
+        const range = 'Master Classes!A:H'; // A-H columns
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_SHEET_ID}/values/${encodeURIComponent(range)}?key=${apiKey}`;
         
         console.log('Loading Master Classes...');
@@ -400,25 +426,30 @@ async function loadMasterClasses(apiKey) {
         masterClasses = [];
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
-            if (row.length >= 4 && row[0] && row[3]) { // Ensure name and date exist
+            if (row.length >= 7 && row[0] && row[6]) { // Ensure name and date exist (date is column G)
                 console.log('Raw master class row data:', row);
                 const masterClass = {
                     name: row[0] || '',           // A: Class Name
                     description: row[1] || '',    // B: Description  
-                    choreographer: row[2] || '',  // C: Choreographer/Instructor
-                    date: row[3] || '',           // D: Date
-                    time: row[4] || '',           // E: Time
-                    ages: row[5] || 'All Ages',   // F: Ages
-                    classId: row[6] || '',        // G: Class ID
+                    performance: row[2] || '',    // C: Performance
+                    time: row[3] || '',           // D: Time
+                    ages: row[4] || 'All Ages',   // E: Ages
+                    choreographer: row[5] || '',  // F: Instructor (renamed from choreographer)
+                    date: row[6] || '',           // G: Date
+                    classId: row[7] || '',        // H: Class ID
                     type: 'master',
-                    styles: extractDanceStyles(row[0] || '')
+                    styles: extractDanceStyles(row[0] || ''),
+                    parsedDate: parseClassDate(row[6] || '') // Add parsed date for sorting (column G)
                 };
                 console.log('Processed master class:', masterClass.name, 'date:', masterClass.date);
                 masterClasses.push(masterClass);
             }
         }
         
-        console.log(`Loaded ${masterClasses.length} master classes`);
+        // Sort master classes by date (earliest first)
+        masterClasses.sort((a, b) => a.parsedDate.getTime() - b.parsedDate.getTime());
+        
+        console.log(`Loaded and sorted ${masterClasses.length} master classes by date`);
         
     } catch (error) {
         console.error('Error loading Master Classes:', error);
