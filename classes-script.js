@@ -10,19 +10,23 @@ let currentView = 'regular'; // 'regular' or 'master'
 const GOOGLE_SHEET_ID = '1oiD4w17jVWc9_4NDAIFZpfWa4Unli5wovxxVUqzyn88';
 
 // Initialize when page loads
-window.onload = function() {
-    loadClassesFromGoogleSheets();
+window.onload = async function() {
+    // First, set up the static parts of the page
     setupFilters();
     setupViewToggle();
 
-    // Handle initial view based on URL hash
-    const initialView = window.location.hash.substring(1) || 'regular';
-    switchView(initialView, true); // true to prevent hash update
+    // Wait for all class data to be loaded from Google Sheets
+    await loadClassesFromGoogleSheets();
 
-    // Handle hash changes for back/forward navigation
+    // Now that data is loaded, handle the initial view based on the URL hash
+    const initialView = window.location.hash.substring(1) || 'regular';
+    switchView(initialView, true); // true to prevent re-updating the hash
+
+    // Add a listener to handle back/forward navigation
     window.addEventListener('hashchange', () => {
         const newView = window.location.hash.substring(1) || 'regular';
-        switchView(newView, true);
+        // Call switchView, but don't treat it as the initial page load
+        switchView(newView, true); 
     });
 };
 
