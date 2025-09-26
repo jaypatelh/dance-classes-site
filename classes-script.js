@@ -14,6 +14,16 @@ window.onload = function() {
     loadClassesFromGoogleSheets();
     setupFilters();
     setupViewToggle();
+
+    // Handle initial view based on URL hash
+    const initialView = window.location.hash.substring(1) || 'regular';
+    switchView(initialView, true); // true to prevent hash update
+
+    // Handle hash changes for back/forward navigation
+    window.addEventListener('hashchange', () => {
+        const newView = window.location.hash.substring(1) || 'regular';
+        switchView(newView, true);
+    });
 };
 
 // Load classes from Google Sheets using API v4
@@ -462,28 +472,38 @@ async function loadMasterClasses(apiKey) {
 function setupViewToggle() {
     const regularBtn = document.getElementById('regular-classes-btn');
     const masterBtn = document.getElementById('master-classes-btn');
+    
+    regularBtn.addEventListener('click', () => switchView('regular'));
+    masterBtn.addEventListener('click', () => switchView('master'));
+}
+
+// Switch between regular and master class views
+function switchView(view, isInitialLoad = false) {
+    if (currentView === view && !isInitialLoad) return; // Avoid unnecessary re-renders
+
+    const regularBtn = document.getElementById('regular-classes-btn');
+    const masterBtn = document.getElementById('master-classes-btn');
     const filtersSection = document.getElementById('filters-section');
-    
-    regularBtn.addEventListener('click', () => {
-        currentView = 'regular';
-        regularBtn.classList.add('active');
-        masterBtn.classList.remove('active');
-        filtersSection.style.display = 'grid';
-        
-        // Reset filters and show regular classes
-        filteredClasses = [...allClasses];
-        applyFilters();
-    });
-    
-    masterBtn.addEventListener('click', () => {
-        currentView = 'master';
+
+    currentView = view;
+
+    if (view === 'master') {
         masterBtn.classList.add('active');
         regularBtn.classList.remove('active');
         filtersSection.style.display = 'none';
-        
-        // Show master classes
         displayMasterClasses();
-    });
+    } else {
+        regularBtn.classList.add('active');
+        masterBtn.classList.remove('active');
+        filtersSection.style.display = 'grid';
+        filteredClasses = [...allClasses];
+        applyFilters();
+    }
+
+    // Update the URL hash without triggering a page reload
+    if (!isInitialLoad) {
+        history.pushState(null, null, '#' + view);
+    }
 }
 
 // Display master classes
