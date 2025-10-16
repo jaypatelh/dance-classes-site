@@ -376,14 +376,20 @@ function showError(message) {
 }
 
 // Open registration page in new tab
-function openRegistration(classId) {
+function openRegistration(classId, classDay) {
     if (!classId) {
         console.error('Class ID is required for registration');
         alert('Registration is not available for this class. Please contact the studio directly.');
         return;
     }
     
-    const registrationUrl = `https://app.thestudiodirector.com/thedancecompanyoflos/portal.sd?page=Enroll&cident=${classId}`;
+    let registrationUrl = `https://app.thestudiodirector.com/thedancecompanyoflos/portal.sd?page=Enroll&cident=${classId}`;
+    
+    // Add class_day parameter if available
+    if (classDay) {
+        registrationUrl += `&class_day=${encodeURIComponent(classDay)}`;
+    }
+    
     window.open(registrationUrl, '_blank');
 }
 
@@ -536,7 +542,7 @@ function displayMasterClasses() {
                     Master Class
                 </div>
                 ${cls.classId ? `
-                    <button class="register-btn" onclick="openRegistration('${cls.classId}')">
+                    <button class="register-btn" onclick="openRegistration('${cls.classId}', '${cls.date}')">
                         <i class="fas fa-user-plus"></i>
                         Register
                     </button>
