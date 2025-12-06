@@ -53,18 +53,37 @@ class Analytics {
             }, true); // Synchronous for beforeunload
         });
 
-        // Track scroll depth at key milestones
+        // Track scroll depth relative to classes grid
         let maxScrollDepth = 0;
         const scrollMilestones = [25, 50, 75, 100];
+        
+        // Store reset function so it can be called when filters change
+        this.scrollResetFn = () => {
+            maxScrollDepth = 0;
+        };
+        
         window.addEventListener('scroll', this.debounce(() => {
-            const scrollDepth = Math.round((window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100);
+            // Get the classes grid container
+            const classesGrid = document.getElementById('classes-grid');
+            if (!classesGrid) return;
             
-            // Find the highest milestone we've passed
-            for (let milestone of scrollMilestones) {
-                if (scrollDepth >= milestone && maxScrollDepth < milestone) {
-                    maxScrollDepth = milestone;
-                    this.trackEvent('scroll_depth', { depth: milestone });
-                    break;
+            const rect = classesGrid.getBoundingClientRect();
+            const gridTop = rect.top + window.scrollY;
+            const gridHeight = rect.height;
+            
+            // Calculate how far user has scrolled into the grid
+            const scrolledIntoGrid = Math.max(0, window.scrollY + window.innerHeight - gridTop);
+            const scrollDepth = Math.min(100, Math.round((scrolledIntoGrid / gridHeight) * 100));
+            
+            // Only track if user has scrolled into the grid
+            if (scrollDepth > 0) {
+                // Find the highest milestone we've passed
+                for (let milestone of scrollMilestones) {
+                    if (scrollDepth >= milestone && maxScrollDepth < milestone) {
+                        maxScrollDepth = milestone;
+                        this.trackEvent('scroll_depth', { depth: milestone });
+                        break;
+                    }
                 }
             }
         }, 500));
@@ -128,6 +147,16 @@ class Analytics {
             filter_type: filterType,
             filter_value: filterValue
         });
+        
+        // Reset scroll tracking for new filter combination
+        this.resetScrollTracking();
+    }
+    
+    resetScrollTracking() {
+        // This will be called from setupEventListeners to store the reset function
+        if (this.scrollResetFn) {
+            this.scrollResetFn();
+        }
     }
 
     trackViewChange(viewType) {

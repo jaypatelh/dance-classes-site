@@ -699,44 +699,77 @@
                     minute: '2-digit'
                 });
 
-                // Track filter state to only show deltas
+                // Track filter state and max scroll depth for each filter combo
                 const filterState = {};
                 const processedJourney = [];
+                let maxScrollSinceLastFilter = 0;
                 
-                visitor.journey.forEach(step => {
+                visitor.journey.forEach((step, idx) => {
                     if (step.event_type === 'session_start') {
                         processedJourney.push(step);
                     } else if (step.event_type === 'filter_change') {
                         const filterType = step.event_data.filter_type;
                         const filterValue = step.event_data.filter_value;
+                        
                         // Only add if this filter type changed to a different value
                         if (filterState[filterType] !== filterValue) {
+                            // Add max scroll from previous filter combo (if any)
+                            if (maxScrollSinceLastFilter > 0) {
+                                processedJourney.push({
+                                    event_type: 'scroll_depth',
+                                    event_data: { depth: maxScrollSinceLastFilter },
+                                    timestamp: step.timestamp
+                                });
+                            }
+                            
                             filterState[filterType] = filterValue;
                             processedJourney.push(step);
+                            maxScrollSinceLastFilter = 0; // Reset for new filter combo
                         }
+                    } else if (step.event_type === 'scroll_depth') {
+                        // Track max scroll depth for current filter combo
+                        maxScrollSinceLastFilter = Math.max(maxScrollSinceLastFilter, step.event_data.depth);
                     } else if (step.event_type === 'view_change') {
-                        // Only add if different from previous view_change
+                        // Add max scroll before view change
+                        if (maxScrollSinceLastFilter > 0) {
+                            processedJourney.push({
+                                event_type: 'scroll_depth',
+                                event_data: { depth: maxScrollSinceLastFilter },
+                                timestamp: step.timestamp
+                            });
+                            maxScrollSinceLastFilter = 0;
+                        }
+                        
                         const lastView = processedJourney.slice().reverse().find(s => s.event_type === 'view_change');
                         if (!lastView || lastView.event_data.view_type !== step.event_data.view_type) {
                             processedJourney.push(step);
                         }
                     } else if (step.event_type === 'registration_click') {
-                        // Only add if different class
+                        // Add max scroll before registration
+                        if (maxScrollSinceLastFilter > 0) {
+                            processedJourney.push({
+                                event_type: 'scroll_depth',
+                                event_data: { depth: maxScrollSinceLastFilter },
+                                timestamp: step.timestamp
+                            });
+                            maxScrollSinceLastFilter = 0;
+                        }
+                        
                         const lastReg = processedJourney.slice().reverse().find(s => s.event_type === 'registration_click');
                         if (!lastReg || lastReg.event_data.class_id !== step.event_data.class_id) {
                             processedJourney.push(step);
                         }
-                    } else if (step.event_type === 'scroll_depth') {
-                        // Show all scroll milestones (25%, 50%, 75%, 100%)
-                        const depth = step.event_data.depth;
-                        if (depth === 25 || depth === 50 || depth === 75 || depth === 100) {
-                            const lastScroll = processedJourney.slice().reverse().find(s => s.event_type === 'scroll_depth');
-                            if (!lastScroll || lastScroll.event_data.depth < depth) {
-                                processedJourney.push(step);
-                            }
-                        }
                     }
                 });
+                
+                // Add final scroll depth if any
+                if (maxScrollSinceLastFilter > 0) {
+                    processedJourney.push({
+                        event_type: 'scroll_depth',
+                        event_data: { depth: maxScrollSinceLastFilter },
+                        timestamp: visitor.journey[visitor.journey.length - 1].timestamp
+                    });
+                }
 
                 const journeySteps = processedJourney.map((step, index) => {
                     let icon = '●';
