@@ -5,7 +5,7 @@ const { createClient } = require('@supabase/supabase-js');
 
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY; // Support both names
 
 if (!supabaseUrl || !supabaseKey) {
     console.error('Supabase credentials not configured');
@@ -154,18 +154,31 @@ exports.handler = async (event, context) => {
     }
 
     if (!supabase) {
+        console.error('Supabase not configured. Check environment variables:', {
+            hasUrl: !!process.env.SUPABASE_URL,
+            hasAnonKey: !!process.env.SUPABASE_ANON_KEY,
+            hasKey: !!process.env.SUPABASE_KEY,
+            useSupabase: process.env.USE_SUPABASE
+        });
         return {
             statusCode: 500,
             headers,
-            body: JSON.stringify({ error: 'Supabase not configured' })
+            body: JSON.stringify({ 
+                error: 'Supabase not configured',
+                details: 'Check SUPABASE_URL and SUPABASE_ANON_KEY environment variables'
+            })
         };
     }
 
-    const path = event.path.replace('/.netlify/functions/analytics', '');
+    // Extract the path - get everything after /analytics
+    const pathMatch = event.path.match(/\/analytics(.*)$/);
+    const path = pathMatch ? pathMatch[1] : '';
+    
+    console.log('Function called with path:', event.path, '-> normalized:', path);
 
     try {
         // POST /api/analytics - Store events
-        if (event.httpMethod === 'POST' && path === '') {
+        if (event.httpMethod === 'POST' && (path === '' || path === '/')) {
             const events = JSON.parse(event.body);
             const eventsArray = Array.isArray(events) ? events : [events];
 
@@ -282,11 +295,20 @@ exports.handler = async (event, context) => {
         };
 
     } catch (error) {
-        console.error('Analytics function error:', error);
+        console.error('Analytics function error:', {
+            message: error.message,
+            stack: error.stack,
+            path: event.path,
+            method: event.httpMethod
+        });
         return {
             statusCode: 500,
             headers,
-            body: JSON.stringify({ error: error.message })
+            body: JSON.stringify({ 
+                error: error.message,
+                path: event.path,
+                method: event.httpMethod
+            })
         };
     }
 };

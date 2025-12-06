@@ -91,7 +91,7 @@ Add these variables:
 | `OPENROUTER_API_KEY` | Your OpenRouter key | If using AI features |
 | `OWNER_PHONE_NUMBER` | Your phone number | For contact |
 | `SUPABASE_URL` | Your Supabase URL | From Step 1.3 |
-| `SUPABASE_KEY` | Your Supabase anon key | From Step 1.3 |
+| `SUPABASE_ANON_KEY` | Your Supabase anon key | From Step 1.3 (or `SUPABASE_KEY`) |
 | `USE_SUPABASE` | `true` | Enables Supabase |
 
 **Important:** Make sure to set these for **all deploy contexts** (Production, Deploy Previews, Branch deploys)

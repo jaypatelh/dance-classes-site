@@ -22,7 +22,7 @@ NETLIFY SETUP:
 [ ] Add environment variables in Netlify dashboard:
     [ ] GOOGLE_API_KEY
     [ ] SUPABASE_URL
-    [ ] SUPABASE_KEY
+    [ ] SUPABASE_ANON_KEY (or SUPABASE_KEY)
     [ ] USE_SUPABASE=true
     [ ] OPENROUTER_API_KEY (if using)
     [ ] OWNER_PHONE_NUMBER
