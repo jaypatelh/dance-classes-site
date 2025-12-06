@@ -363,6 +363,222 @@
             background: #ccc;
             border-radius: 3px;
         }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 20px;
+            }
+
+            .date-filter {
+                padding: 15px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .date-filter label {
+                margin-top: 10px;
+                font-size: 14px;
+            }
+
+            .date-filter input {
+                width: 100%;
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+
+            .date-filter button {
+                width: 100%;
+                padding: 12px 20px;
+                font-size: 14px;
+                margin-top: 10px;
+            }
+
+            .date-filter button[style*="margin-left"] {
+                margin-left: 0 !important;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+
+            .stat-card {
+                padding: 20px;
+            }
+
+            .stat-card h3 {
+                font-size: 12px;
+            }
+
+            .stat-card .value {
+                font-size: 28px;
+            }
+
+            .funnel-section, .details-section {
+                padding: 20px;
+                margin-bottom: 15px;
+            }
+
+            .funnel-section h2, .details-section h2 {
+                font-size: 20px;
+                margin-bottom: 15px;
+            }
+
+            .funnel-step {
+                padding: 15px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .funnel-step .label {
+                font-size: 16px;
+            }
+
+            .funnel-step .count {
+                font-size: 24px;
+            }
+
+            .funnel-step .percentage {
+                position: static;
+                font-size: 14px;
+            }
+
+            /* Filter breakdown grid on mobile */
+            .funnel-section div[style*="grid-template-columns"] {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 10px !important;
+            }
+
+            .funnel-section div[style*="font-size: 32px"] {
+                font-size: 24px !important;
+            }
+
+            /* Tables on mobile */
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            table {
+                font-size: 14px;
+                min-width: 600px; /* Allows horizontal scroll */
+            }
+
+            th, td {
+                padding: 10px 8px;
+                font-size: 13px;
+            }
+
+            th {
+                position: sticky;
+                top: 0;
+                background: #f5f5f5;
+                z-index: 1;
+            }
+
+            /* Journey cards on mobile */
+            #journeysContainer {
+                max-height: 600px;
+            }
+
+            .journey-card {
+                padding: 12px;
+                margin-bottom: 12px;
+            }
+
+            .journey-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .journey-header span:first-child {
+                font-size: 14px;
+            }
+
+            .journey-time {
+                font-size: 11px;
+            }
+
+            .journey-steps {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+
+            .journey-step {
+                padding: 8px 10px;
+                font-size: 12px;
+                width: 100%;
+            }
+
+            .journey-step-icon {
+                font-size: 16px;
+            }
+
+            /* Hide arrows between steps on mobile */
+            .journey-steps span[style*="margin: 0 8px"] {
+                display: none;
+            }
+
+            .badge {
+                font-size: 11px;
+                padding: 3px 6px;
+            }
+
+            .loading {
+                padding: 30px;
+                font-size: 16px;
+            }
+
+            .error {
+                padding: 12px;
+                font-size: 14px;
+            }
+        }
+
+        /* Extra small devices */
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .stat-card .value {
+                font-size: 24px;
+            }
+
+            .funnel-section h2, .details-section h2 {
+                font-size: 18px;
+            }
+
+            table {
+                font-size: 12px;
+                min-width: 500px;
+            }
+
+            th, td {
+                padding: 8px 6px;
+                font-size: 12px;
+            }
+        }
+
+        /* Landscape orientation on mobile */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            #journeysContainer {
+                max-height: 400px;
+            }
+        }
     </style>
 </head>
 <body>
