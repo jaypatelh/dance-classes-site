@@ -271,8 +271,21 @@
             border-radius: 4px;
             font-size: 13px;
             display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+
+        .journey-step-content {
+            display: flex;
             align-items: center;
             gap: 6px;
+        }
+
+        .journey-step-time {
+            font-size: 10px;
+            color: #999;
+            font-weight: normal;
         }
 
         .journey-step.session_start {
@@ -303,6 +316,93 @@
 
         .journey-step-icon {
             font-size: 14px;
+        }
+
+        .accordion {
+            margin-bottom: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .accordion-header {
+            background: linear-gradient(to right, #667eea, #764ba2);
+            color: white;
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .accordion-header:hover {
+            background: linear-gradient(to right, #5568d3, #6a3f8f);
+        }
+
+        .accordion-header .arrow {
+            transition: transform 0.3s;
+        }
+
+        .accordion-header.collapsed .arrow {
+            transform: rotate(-90deg);
+        }
+
+        .accordion-content {
+            max-height: 800px;
+            overflow-y: auto;
+            padding: 15px;
+            background: white;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .accordion-content.collapsed {
+            max-height: 0;
+            padding: 0 15px;
+            overflow: hidden;
+        }
+
+        .delete-journey-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: background 0.3s;
+            margin-left: 10px;
+        }
+
+        .delete-journey-btn:hover {
+            background: #d32f2f;
+        }
+
+        .journey-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .journey-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .journey-header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         /* Scrolling improvements */
@@ -630,6 +730,11 @@
                     <div class="value" id="inactiveJourneys">0</div>
                     <div class="subtext">No filters or scrolling</div>
                 </div>
+                <div class="stat-card">
+                    <h3>Avg. Session Duration</h3>
+                    <div class="value" id="avgDuration">0s</div>
+                    <div class="subtext">Time from first to last event</div>
+                </div>
             </div>
 
             <div class="funnel-section">
@@ -674,7 +779,26 @@
             <div class="details-section">
                 <h2>Visitor Journeys</h2>
                 <p style="color: #666; margin-bottom: 15px;">Click path of each visitor through the site</p>
-                <div id="journeysContainer"></div>
+                
+                <div class="accordion">
+                    <div class="accordion-header" onclick="toggleAccordion('activeJourneys')">
+                        <span>Active Journeys <span id="activeJourneysCount" style="opacity: 0.8;">(0)</span></span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div id="activeJourneysContent" class="accordion-content">
+                        <div id="activeJourneysContainer"></div>
+                    </div>
+                </div>
+
+                <div class="accordion">
+                    <div class="accordion-header collapsed" onclick="toggleAccordion('inactiveJourneys')">
+                        <span>Inactive Journeys <span id="inactiveJourneysCount" style="opacity: 0.8;">(0)</span></span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div id="inactiveJourneysContent" class="accordion-content collapsed">
+                        <div id="inactiveJourneysContainer"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -683,6 +807,30 @@
         const API_ENDPOINT = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
             ? 'http://localhost:3001/api/analytics'
             : '/.netlify/functions/analytics';
+
+        // Toggle accordion
+        function toggleAccordion(id) {
+            const header = event.currentTarget;
+            const content = document.getElementById(id + 'Content');
+            
+            header.classList.toggle('collapsed');
+            content.classList.toggle('collapsed');
+        }
+
+        // Helper to format duration in seconds to human-readable format
+        function formatDuration(seconds) {
+            if (seconds < 60) {
+                return `${seconds}s`;
+            } else if (seconds < 3600) {
+                const minutes = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return secs > 0 ? `${minutes}m ${secs}s` : `${minutes}m`;
+            } else {
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+            }
+        }
 
         // Helper to get date in PST timezone
         function getPSTDate(date = new Date()) {
@@ -765,6 +913,7 @@
             document.getElementById('registrations').textContent = data.clickedRegistration || 0;
             document.getElementById('conversionRate').textContent = data.conversionRate + '%';
             document.getElementById('inactiveJourneys').textContent = data.inactiveJourneys || 0;
+            document.getElementById('avgDuration').textContent = formatDuration(data.avgDuration || 0);
 
             // Display funnel
             displayFunnel(data);
@@ -776,12 +925,15 @@
             displayPopularClasses(data.popularClasses || []);
 
             // Display visitor journeys
-            displayVisitorJourneys(data.visitorJourneys || []);
+            displayActiveJourneys(data.activeJourneys || []);
+            displayInactiveJourneys(data.inactiveJourneysData || []);
         }
 
         function displayFunnel(data) {
             const funnelContainer = document.getElementById('funnelContainer');
             const breakdown = data.filterUsageBreakdown || {};
+            
+            const durationDist = data.durationDistribution || {};
             
             const filterBreakdownHTML = `
                 <div style="margin: 20px 0; padding: 20px; background: #f9f9f9; border-radius: 8px;">
@@ -802,6 +954,27 @@
                         <div style="text-align: center;">
                             <div style="font-size: 32px; font-weight: bold; color: #667eea;">${breakdown[3] || 0}</div>
                             <div style="color: #666;">3 filters</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin: 20px 0; padding: 20px; background: #f9f9f9; border-radius: 8px;">
+                    <h3 style="margin-bottom: 15px; color: #333;">Session Duration Distribution</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 32px; font-weight: bold; color: #667eea;">${durationDist.under_30s || 0}</div>
+                            <div style="color: #666;">Under 30s</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 32px; font-weight: bold; color: #667eea;">${durationDist['30s_to_2m'] || 0}</div>
+                            <div style="color: #666;">30s - 2m</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 32px; font-weight: bold; color: #667eea;">${durationDist['2m_to_5m'] || 0}</div>
+                            <div style="color: #666;">2m - 5m</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 32px; font-weight: bold; color: #667eea;">${durationDist.over_5m || 0}</div>
+                            <div style="color: #666;">Over 5m</div>
                         </div>
                     </div>
                 </div>
@@ -900,8 +1073,34 @@
             `).join('');
         }
 
-        function displayVisitorJourneys(journeys) {
-            const container = document.getElementById('journeysContainer');
+        async function deleteJourney(sessionId, isActive) {
+            if (!confirm('Are you sure you want to delete this journey?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_ENDPOINT}/session/${sessionId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to delete journey');
+                }
+                
+                // Reload analytics to reflect the deletion
+                loadAnalytics();
+            } catch (error) {
+                console.error('Error deleting journey:', error);
+                alert('Failed to delete journey. Check console for details.');
+            }
+        }
+
+        function displayActiveJourneys(journeys) {
+            const container = document.getElementById('activeJourneysContainer');
+            document.getElementById('activeJourneysCount').textContent = `(${journeys.length})`;
             
             if (journeys.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #999;">No visitor data available</p>';
@@ -1023,12 +1222,24 @@
                         label = `Scrolled to ${step.event_data.depth}%`;
                     }
 
+                    // Format timestamp
+                    const stepTime = new Date(step.timestamp);
+                    const stepTimeStr = stepTime.toLocaleTimeString('en-US', {
+                        timeZone: 'America/Los_Angeles',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+
                     const arrow = index < processedJourney.length - 1 ? '<span style="margin: 0 8px; color: #999;">→</span>' : '';
 
                     return `
                         <div class="journey-step ${step.event_type}">
-                            <span class="journey-step-icon">${icon}</span>
-                            <span>${label}</span>
+                            <div class="journey-step-content">
+                                <span class="journey-step-icon">${icon}</span>
+                                <span>${label}</span>
+                            </div>
+                            <span class="journey-step-time">${stepTimeStr}</span>
                         </div>
                         ${arrow}
                     `;
@@ -1040,11 +1251,105 @@
                     ? '<span class="badge medium">Engaged</span>'
                     : '<span class="badge low">Browsed</span>';
 
+                const durationBadge = visitor.duration > 0 
+                    ? `<span class="badge" style="background: #9c27b0; color: white;">⏱️ ${formatDuration(visitor.duration)}</span>`
+                    : '';
+
                 return `
                     <div class="journey-card">
                         <div class="journey-header">
-                            <span>Visitor ${visitor.session_id}</span>
-                            <span>${statusBadge} <span class="journey-time">${timeStr}</span></span>
+                            <div class="journey-header-left">
+                                <span>Visitor ${visitor.session_id_display}</span>
+                            </div>
+                            <div class="journey-header-right">
+                                ${statusBadge}
+                                ${durationBadge}
+                                <span class="journey-time">${timeStr}</span>
+                                <button class="delete-journey-btn" onclick="deleteJourney('${visitor.session_id}', true)">🗑️ Delete</button>
+                            </div>
+                        </div>
+                        <div class="journey-steps">
+                            ${journeySteps}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function displayInactiveJourneys(journeys) {
+            const container = document.getElementById('inactiveJourneysContainer');
+            document.getElementById('inactiveJourneysCount').textContent = `(${journeys.length})`;
+            
+            if (journeys.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No inactive visitor data</p>';
+                return;
+            }
+
+            // Sort by start time, most recent first
+            journeys.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+
+            container.innerHTML = journeys.map(visitor => {
+                const startTime = new Date(visitor.startTime);
+                const timeStr = startTime.toLocaleString('en-US', { 
+                    timeZone: 'America/Los_Angeles',
+                    month: 'short', 
+                    day: 'numeric', 
+                    hour: 'numeric', 
+                    minute: '2-digit'
+                });
+
+                const journeySteps = visitor.journey.map((step, index) => {
+                    let icon = '●';
+                    let label = '';
+
+                    if (step.event_type === 'session_start') {
+                        icon = '🚪';
+                        label = 'Visited site';
+                    } else if (step.event_type === 'view_change') {
+                        icon = '👁️';
+                        const viewType = step.event_data.view_type === 'master' ? 'Master Classes' : 'Regular Classes';
+                        label = `Viewed ${viewType}`;
+                    }
+
+                    // Format timestamp
+                    const stepTime = new Date(step.timestamp);
+                    const stepTimeStr = stepTime.toLocaleTimeString('en-US', {
+                        timeZone: 'America/Los_Angeles',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+
+                    const arrow = index < visitor.journey.length - 1 ? '<span style="margin: 0 8px; color: #999;">→</span>' : '';
+
+                    return `
+                        <div class="journey-step ${step.event_type}">
+                            <div class="journey-step-content">
+                                <span class="journey-step-icon">${icon}</span>
+                                <span>${label}</span>
+                            </div>
+                            <span class="journey-step-time">${stepTimeStr}</span>
+                        </div>
+                        ${arrow}
+                    `;
+                }).join('');
+
+                const durationBadge = visitor.duration > 0 
+                    ? `<span class="badge" style="background: #9c27b0; color: white;">⏱️ ${formatDuration(visitor.duration)}</span>`
+                    : '';
+
+                return `
+                    <div class="journey-card">
+                        <div class="journey-header">
+                            <div class="journey-header-left">
+                                <span>Visitor ${visitor.session_id_display}</span>
+                            </div>
+                            <div class="journey-header-right">
+                                <span class="badge low">Inactive</span>
+                                ${durationBadge}
+                                <span class="journey-time">${timeStr}</span>
+                                <button class="delete-journey-btn" onclick="deleteJourney('${visitor.session_id}', false)">🗑️ Delete</button>
+                            </div>
                         </div>
                         <div class="journey-steps">
                             ${journeySteps}

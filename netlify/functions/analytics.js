@@ -62,6 +62,18 @@ function calculateFunnel(events) {
     
     const allSessions = Array.from(sessionMap.values());
     
+    // Calculate session duration for each session
+    allSessions.forEach(session => {
+        if (session.journey.length > 0) {
+            const firstEvent = session.journey[0];
+            const lastEvent = session.journey[session.journey.length - 1];
+            const durationMs = new Date(lastEvent.timestamp) - new Date(firstEvent.timestamp);
+            session.duration = Math.max(0, Math.round(durationMs / 1000)); // Duration in seconds
+        } else {
+            session.duration = 0;
+        }
+    });
+    
     // Filter out inactive sessions (no filters AND no scrolling)
     const inactiveSessions = allSessions.filter(s => !s.usedFilters && !s.scrolled);
     const activeSessions = allSessions.filter(s => s.usedFilters || s.scrolled);
@@ -75,6 +87,20 @@ function calculateFunnel(events) {
         filterUsageBreakdown[filterCount] = (filterUsageBreakdown[filterCount] || 0) + 1;
     });
     
+    // Calculate duration statistics (only for active sessions)
+    const durations = activeSessions.map(s => s.duration).filter(d => d > 0);
+    const avgDuration = durations.length > 0 
+        ? Math.round(durations.reduce((sum, d) => sum + d, 0) / durations.length)
+        : 0;
+    
+    // Duration distribution buckets (in seconds)
+    const durationDistribution = {
+        'under_30s': activeSessions.filter(s => s.duration < 30).length,
+        '30s_to_2m': activeSessions.filter(s => s.duration >= 30 && s.duration < 120).length,
+        '2m_to_5m': activeSessions.filter(s => s.duration >= 120 && s.duration < 300).length,
+        'over_5m': activeSessions.filter(s => s.duration >= 300).length
+    };
+    
     return {
         totalVisitors: activeSessions.filter(s => s.visited).length,
         usedFilters: activeSessions.filter(s => s.usedFilters).length,
@@ -84,14 +110,27 @@ function calculateFunnel(events) {
             : 0,
         filterUsageBreakdown,
         inactiveJourneys: inactiveSessions.length,
+        avgDuration,
+        durationDistribution,
         popularFilters: getPopularFilters(activeSessions),
         popularClasses: getPopularClasses(activeSessions),
-        visitorJourneys: activeSessions.map(s => ({
-            session_id: s.session_id.substring(0, 8) + '...', // Shortened for display
+        activeJourneys: activeSessions.map(s => ({
+            session_id: s.session_id,
+            session_id_display: s.session_id.substring(0, 8) + '...',
             startTime: s.startTime,
             journey: s.journey,
             usedFilters: s.usedFilters,
-            clickedRegistration: s.clickedRegistration
+            clickedRegistration: s.clickedRegistration,
+            duration: s.duration
+        })),
+        inactiveJourneysData: inactiveSessions.map(s => ({
+            session_id: s.session_id,
+            session_id_display: s.session_id.substring(0, 8) + '...',
+            startTime: s.startTime,
+            journey: s.journey,
+            usedFilters: s.usedFilters,
+            clickedRegistration: s.clickedRegistration,
+            duration: s.duration
         }))
     };
 }
@@ -268,6 +307,32 @@ exports.handler = async (event, context) => {
                 statusCode: 200,
                 headers,
                 body: JSON.stringify(funnelData)
+            };
+        }
+
+        // DELETE /api/analytics/session/:sessionId - Delete specific session
+        if (event.httpMethod === 'DELETE' && path.startsWith('/session/')) {
+            const sessionId = path.replace('/session/', '');
+            
+            // Delete events for this session
+            await supabase
+                .from('events')
+                .delete()
+                .eq('session_id', sessionId);
+            
+            // Delete session
+            await supabase
+                .from('sessions')
+                .delete()
+                .eq('session_id', sessionId);
+            
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({
+                    success: true,
+                    sessionId
+                })
             };
         }
 
