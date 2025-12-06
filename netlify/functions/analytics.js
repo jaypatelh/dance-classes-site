@@ -24,6 +24,7 @@ function calculateFunnel(events) {
                 visited: false,
                 usedFilters: false,
                 clickedRegistration: false,
+                scrolled: false,
                 filters: [],
                 registrations: [],
                 journey: [],
@@ -54,31 +55,38 @@ function calculateFunnel(events) {
         } else if (event.event_type === 'registration_click') {
             session.clickedRegistration = true;
             session.registrations.push(event.event_data);
+        } else if (event.event_type === 'scroll_depth') {
+            session.scrolled = true;
         }
     });
     
-    const sessions = Array.from(sessionMap.values());
+    const allSessions = Array.from(sessionMap.values());
     
-    // Calculate filter usage breakdown
+    // Filter out inactive sessions (no filters AND no scrolling)
+    const inactiveSessions = allSessions.filter(s => !s.usedFilters && !s.scrolled);
+    const activeSessions = allSessions.filter(s => s.usedFilters || s.scrolled);
+    
+    // Calculate filter usage breakdown (only for active sessions)
     const filterUsageBreakdown = {
         0: 0, 1: 0, 2: 0, 3: 0
     };
-    sessions.forEach(s => {
+    activeSessions.forEach(s => {
         const filterCount = s.uniqueFilterTypes.size;
         filterUsageBreakdown[filterCount] = (filterUsageBreakdown[filterCount] || 0) + 1;
     });
     
     return {
-        totalVisitors: sessions.filter(s => s.visited).length,
-        usedFilters: sessions.filter(s => s.usedFilters).length,
-        clickedRegistration: sessions.filter(s => s.clickedRegistration).length,
-        conversionRate: sessions.length > 0 
-            ? (sessions.filter(s => s.clickedRegistration).length / sessions.length * 100).toFixed(2)
+        totalVisitors: activeSessions.filter(s => s.visited).length,
+        usedFilters: activeSessions.filter(s => s.usedFilters).length,
+        clickedRegistration: activeSessions.filter(s => s.clickedRegistration).length,
+        conversionRate: activeSessions.length > 0 
+            ? (activeSessions.filter(s => s.clickedRegistration).length / activeSessions.length * 100).toFixed(2)
             : 0,
         filterUsageBreakdown,
-        popularFilters: getPopularFilters(sessions),
-        popularClasses: getPopularClasses(sessions),
-        visitorJourneys: sessions.map(s => ({
+        inactiveJourneys: inactiveSessions.length,
+        popularFilters: getPopularFilters(activeSessions),
+        popularClasses: getPopularClasses(activeSessions),
+        visitorJourneys: activeSessions.map(s => ({
             session_id: s.session_id.substring(0, 8) + '...', // Shortened for display
             startTime: s.startTime,
             journey: s.journey,

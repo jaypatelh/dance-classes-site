@@ -608,7 +608,7 @@
                 <div class="stat-card">
                     <h3>Total Visitors</h3>
                     <div class="value" id="totalVisitors">0</div>
-                    <div class="subtext">Unique sessions</div>
+                    <div class="subtext">Active sessions (filtered/scrolled)</div>
                 </div>
                 <div class="stat-card">
                     <h3>Filters Used</h3>
@@ -624,6 +624,11 @@
                     <h3>Conversion Rate</h3>
                     <div class="value" id="conversionRate">0%</div>
                     <div class="subtext">Visitors to registrations</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Inactive Journeys</h3>
+                    <div class="value" id="inactiveJourneys">0</div>
+                    <div class="subtext">No filters or scrolling</div>
                 </div>
             </div>
 
@@ -759,6 +764,7 @@
             document.getElementById('filtersUsed').textContent = data.usedFilters || 0;
             document.getElementById('registrations').textContent = data.clickedRegistration || 0;
             document.getElementById('conversionRate').textContent = data.conversionRate + '%';
+            document.getElementById('inactiveJourneys').textContent = data.inactiveJourneys || 0;
 
             // Display funnel
             displayFunnel(data);
