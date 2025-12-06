@@ -5,6 +5,7 @@ let allClasses = [];
 let filteredClasses = [];
 let masterClasses = [];
 let currentView = 'regular'; // 'regular' or 'master'
+let filtersInitialized = false; // Track if filters have been set by user
 
 // Google Sheets configuration
 const GOOGLE_SHEET_ID = '1oiD4w17jVWc9_4NDAIFZpfWa4Unli5wovxxVUqzyn88';
@@ -245,9 +246,24 @@ function setupFilters() {
     const styleFilter = document.getElementById('style-filter');
     const dayFilter = document.getElementById('day-filter');
     
-    ageFilter.addEventListener('change', applyFilters);
-    styleFilter.addEventListener('change', applyFilters);
-    dayFilter.addEventListener('change', applyFilters);
+    ageFilter.addEventListener('change', () => {
+        if (window.analytics) {
+            window.analytics.trackFilterChange('age', ageFilter.value || 'all');
+        }
+        applyFilters();
+    });
+    styleFilter.addEventListener('change', () => {
+        if (window.analytics) {
+            window.analytics.trackFilterChange('style', styleFilter.value || 'all');
+        }
+        applyFilters();
+    });
+    dayFilter.addEventListener('change', () => {
+        if (window.analytics) {
+            window.analytics.trackFilterChange('day', dayFilter.value || 'all');
+        }
+        applyFilters();
+    });
 }
 
 // Apply filters to classes
@@ -301,7 +317,7 @@ function displayClasses() {
             <div class="class-header">
                 <h3>${cls.name}</h3>
                 ${cls.classId ? `
-                    <button class="register-btn" onclick="openRegistration('${cls.classId}')">
+                    <button class="register-btn" onclick='openRegistration("${cls.classId}", "${cls.day}", ${JSON.stringify({name: cls.name, day: cls.day, time: cls.time, style: cls.styles ? cls.styles[0] : "Unknown", instructor: cls.instructor || "Unknown"}).replace(/'/g, "&apos;")})'>
                         <i class="fas fa-user-plus"></i>
                         Register
                     </button>
@@ -376,11 +392,23 @@ function showError(message) {
 }
 
 // Open registration page in new tab
-function openRegistration(classId, classDay) {
+function openRegistration(classId, classDay, classData = {}) {
     if (!classId) {
         console.error('Class ID is required for registration');
         alert('Registration is not available for this class. Please contact the studio directly.');
         return;
+    }
+    
+    // Track registration click
+    if (window.analytics) {
+        window.analytics.trackRegistrationClick({
+            classId: classId,
+            name: classData.name || 'Unknown',
+            day: classDay || classData.day || 'Unknown',
+            time: classData.time || 'Unknown',
+            style: classData.style || 'Unknown',
+            instructor: classData.instructor || 'Unknown'
+        });
     }
     
     let registrationUrl = `https://app.thestudiodirector.com/thedancecompanyoflos/portal.sd?page=Enroll&cident=${classId}`;
@@ -496,6 +524,11 @@ function switchView(view, isInitialLoad = false) {
     const filtersSection = document.getElementById('filters-section');
 
     currentView = view;
+    
+    // Track view change
+    if (window.analytics && !isInitialLoad) {
+        window.analytics.trackViewChange(view);
+    }
 
     if (view === 'master') {
         masterBtn.classList.add('active');
@@ -542,7 +575,7 @@ function displayMasterClasses() {
                     Master Class
                 </div>
                 ${cls.classId ? `
-                    <button class="register-btn" onclick="openRegistration('${cls.classId}', '${cls.date}')">
+                    <button class="register-btn" onclick='openRegistration("${cls.classId}", "${cls.date}", ${JSON.stringify({name: cls.name, day: cls.date, time: cls.time || "TBD", style: "Master Class", instructor: cls.choreographer || "Guest"}).replace(/'/g, "&apos;")})'>
                         <i class="fas fa-user-plus"></i>
                         Register
                     </button>

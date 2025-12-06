@@ -1,0 +1,49 @@
+NETLIFY DEPLOYMENT CHECKLIST
+============================
+
+BEFORE DEPLOYING:
+[ ] Run `npm install` locally to ensure all dependencies work
+[ ] Test locally with `./start-dev.sh` to verify everything works
+[ ] Commit all changes to Git
+[ ] Push to your repository
+
+SUPABASE SETUP:
+[ ] Create Supabase project at https://supabase.com
+[ ] Run SQL to create tables (see DEPLOYMENT_GUIDE.md)
+[ ] Copy Supabase URL (looks like: https://xxxxx.supabase.co)
+[ ] Copy Supabase anon key (long JWT token)
+
+NETLIFY SETUP:
+[ ] Connect repository to Netlify
+[ ] Verify build settings:
+    - Build command: npm run build
+    - Publish directory: ./
+    - Functions directory: netlify/functions
+[ ] Add environment variables in Netlify dashboard:
+    [ ] GOOGLE_API_KEY
+    [ ] SUPABASE_URL
+    [ ] SUPABASE_KEY
+    [ ] USE_SUPABASE=true
+    [ ] OPENROUTER_API_KEY (if using)
+    [ ] OWNER_PHONE_NUMBER
+[ ] Deploy site
+
+TESTING:
+[ ] Visit your Netlify URL
+[ ] Check classes load correctly
+[ ] Apply some filters
+[ ] Scroll down the page
+[ ] Click a register button
+[ ] Wait 10 seconds
+[ ] Go to /admin.html
+[ ] Click "Today" button
+[ ] Verify your session appears in visitor journeys
+[ ] Check Supabase tables have data
+
+DONE! 🎉
+
+Your site is live with full analytics at:
+https://your-site-name.netlify.app
+
+Admin dashboard:
+https://your-site-name.netlify.app/admin.html

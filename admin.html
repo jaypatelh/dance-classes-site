@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - Dance Classes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .date-filter {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .date-filter label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .date-filter input {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .date-filter button {
+            padding: 8px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .date-filter button:hover {
+            background: #5568d3;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-card .subtext {
+            color: #999;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .funnel-section, .details-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .funnel-section h2, .details-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .funnel-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .funnel-step {
+            position: relative;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .funnel-step:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .funnel-step .label {
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .funnel-step .count {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .funnel-step .percentage {
+            position: absolute;
+            right: 20px;
+            bottom: 5px;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .chart-container {
+            margin: 30px 0;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #333;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 18px;
+        }
+
+        .error {
+            background: #ff5252;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .badge.high {
+            background: #4caf50;
+            color: white;
+        }
+
+        .badge.medium {
+            background: #ff9800;
+            color: white;
+        }
+
+        .badge.low {
+            background: #f44336;
+            color: white;
+        }
+
+        .journey-card {
+            background: #f9f9f9;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+        }
+
+        .journey-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .journey-time {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .journey-steps {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .journey-step {
+            background: white;
+            border: 1px solid #e0e0e0;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .journey-step.session_start {
+            border-color: #4caf50;
+            background: #f1f8f4;
+        }
+
+        .journey-step.filter_change {
+            border-color: #2196f3;
+            background: #e3f2fd;
+        }
+
+        .journey-step.view_change {
+            border-color: #ff9800;
+            background: #fff3e0;
+        }
+
+        .journey-step.registration_click {
+            border-color: #f44336;
+            background: #ffebee;
+            font-weight: 600;
+        }
+
+        .journey-step.scroll_depth {
+            border-color: #9c27b0;
+            background: #f3e5f5;
+        }
+
+        .journey-step-icon {
+            font-size: 14px;
+        }
+
+        /* Scrolling improvements */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding-bottom: 40px;
+        }
+
+        #journeysContainer {
+            max-height: 800px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        /* Custom scrollbar */
+        #journeysContainer::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #journeysContainer::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        #journeysContainer::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 4px;
+        }
+
+        #journeysContainer::-webkit-scrollbar-thumb:hover {
+            background: #5568d3;
+        }
+
+        .journey-steps {
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .journey-steps::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .journey-steps::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .journey-steps::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Analytics Dashboard</h1>
+
+        <div class="date-filter">
+            <label for="startDate">Start Date:</label>
+            <input type="date" id="startDate">
+            
+            <label for="endDate">End Date:</label>
+            <input type="date" id="endDate">
+            
+            <button onclick="loadAnalytics()">Apply Filter</button>
+            <button onclick="setToday()">Today</button>
+            <button onclick="setLastWeek()">Last 7 Days</button>
+            <button onclick="setLastMonth()">Last 30 Days</button>
+            
+            <button onclick="clearAllData()" style="background: #f44336; margin-left: auto;">🗑️ Clear All Data</button>
+        </div>
+
+        <div id="loading" class="loading">Loading analytics...</div>
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="content" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Visitors</h3>
+                    <div class="value" id="totalVisitors">0</div>
+                    <div class="subtext">Unique sessions</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Filters Used</h3>
+                    <div class="value" id="filtersUsed">0</div>
+                    <div class="subtext">Users who applied filters</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Registrations</h3>
+                    <div class="value" id="registrations">0</div>
+                    <div class="subtext">Registration clicks</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Conversion Rate</h3>
+                    <div class="value" id="conversionRate">0%</div>
+                    <div class="subtext">Visitors to registrations</div>
+                </div>
+            </div>
+
+            <div class="funnel-section">
+                <h2>User Funnel</h2>
+                <div class="funnel-container" id="funnelContainer"></div>
+            </div>
+
+            <div class="details-section">
+                <h2>Popular Filters</h2>
+                <div class="table-container">
+                    <table id="filtersTable">
+                        <thead>
+                            <tr>
+                                <th>Filter</th>
+                                <th>Usage Count</th>
+                                <th>Popularity</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="details-section">
+                <h2>Most Popular Classes</h2>
+                <div class="table-container">
+                    <table id="classesTable">
+                        <thead>
+                            <tr>
+                                <th>Class Name</th>
+                                <th>Instructor</th>
+                                <th>Day</th>
+                                <th>Time</th>
+                                <th>Registration Clicks</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="details-section">
+                <h2>Visitor Journeys</h2>
+                <p style="color: #666; margin-bottom: 15px;">Click path of each visitor through the site</p>
+                <div id="journeysContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_ENDPOINT = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:3001/api/analytics'
+            : '/.netlify/functions/analytics';
+
+        // Helper to get date in PST timezone
+        function getPSTDate(date = new Date()) {
+            // Get date string in PST timezone
+            const options = { 
+                timeZone: 'America/Los_Angeles',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            };
+            const pstDateStr = date.toLocaleDateString('en-CA', options); // en-CA gives YYYY-MM-DD format
+            return pstDateStr;
+        }
+
+        // Set default dates
+        function setToday() {
+            const today = getPSTDate();
+            document.getElementById('startDate').value = today;
+            document.getElementById('endDate').value = today;
+            loadAnalytics();
+        }
+
+        function setLastWeek() {
+            const today = new Date();
+            const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            document.getElementById('startDate').value = getPSTDate(lastWeek);
+            document.getElementById('endDate').value = getPSTDate(today);
+            loadAnalytics();
+        }
+
+        function setLastMonth() {
+            const today = new Date();
+            const lastMonth = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+            document.getElementById('startDate').value = getPSTDate(lastMonth);
+            document.getElementById('endDate').value = getPSTDate(today);
+            loadAnalytics();
+        }
+
+        async function loadAnalytics() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            // Convert PST date to UTC range
+            // For Dec 5 PST: we want Dec 5 00:00 PST to Dec 5 23:59 PST
+            // Which is Dec 5 08:00 UTC to Dec 6 07:59 UTC
+            const startUTC = startDate + 'T08:00:00.000Z'; // Start of PST day in UTC
+            const endUTC = new Date(new Date(endDate + 'T00:00:00').getTime() + (24*60*60*1000) + (8*60*60*1000) - 1).toISOString(); // End of PST day in UTC
+
+            console.log('Querying date range:', { startDate, endDate, startUTC, endUTC });
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('content').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_ENDPOINT}/funnel?startDate=${startUTC}&endDate=${endUTC}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch analytics data');
+                }
+
+                const data = await response.json();
+                console.log('Analytics data received:', data);
+                displayAnalytics(data);
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').textContent = 'Failed to load analytics data. Make sure the analytics server is running.';
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        function displayAnalytics(data) {
+            // Update stat cards
+            document.getElementById('totalVisitors').textContent = data.totalVisitors || 0;
+            document.getElementById('filtersUsed').textContent = data.usedFilters || 0;
+            document.getElementById('registrations').textContent = data.clickedRegistration || 0;
+            document.getElementById('conversionRate').textContent = data.conversionRate + '%';
+
+            // Display funnel
+            displayFunnel(data);
+
+            // Display popular filters
+            displayPopularFilters(data.popularFilters || []);
+
+            // Display popular classes
+            displayPopularClasses(data.popularClasses || []);
+
+            // Display visitor journeys
+            displayVisitorJourneys(data.visitorJourneys || []);
+        }
+
+        function displayFunnel(data) {
+            const funnelContainer = document.getElementById('funnelContainer');
+            const breakdown = data.filterUsageBreakdown || {};
+            
+            const filterBreakdownHTML = `
+                <div style="margin: 20px 0; padding: 20px; background: #f9f9f9; border-radius: 8px;">
+                    <h3 style="margin-bottom: 15px; color: #333;">Filter Usage Breakdown</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 32px; font-weight: bold; color: #667eea;">${breakdown[0] || 0}</div>
+                            <div style="color: #666;">No filters</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 32px; font-weight: bold; color: #667eea;">${breakdown[1] || 0}</div>
+                            <div style="color: #666;">1 filter</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 32px; font-weight: bold; color: #667eea;">${breakdown[2] || 0}</div>
+                            <div style="color: #666;">2 filters</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 32px; font-weight: bold; color: #667eea;">${breakdown[3] || 0}</div>
+                            <div style="color: #666;">3 filters</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const steps = [
+                { label: 'Visited Site', count: data.totalVisitors, percentage: 100 },
+                { label: 'Clicked Registration', count: data.clickedRegistration, percentage: (data.clickedRegistration / data.totalVisitors * 100).toFixed(1) }
+            ];
+
+            funnelContainer.innerHTML = steps.map((step, index) => `
+                <div class="funnel-step" style="width: ${100 - index * 20}%; margin: 0 auto;">
+                    <span class="label">${step.label}</span>
+                    <span class="count">${step.count}</span>
+                    <span class="percentage">${step.percentage}%</span>
+                </div>
+            `).join('') + filterBreakdownHTML;
+        }
+
+        function displayPopularFilters(filters) {
+            const tbody = document.querySelector('#filtersTable tbody');
+            
+            if (!filters || (!filters.byType && filters.length === 0)) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #999;">No filter data available</td></tr>';
+                return;
+            }
+
+            let html = '';
+            
+            // Show aggregate by type first
+            if (filters.byType) {
+                html += `
+                    <tr style="background: #f5f5f5; font-weight: 600;">
+                        <td colspan="3" style="padding: 12px;">Filter Type Usage</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Age filters</strong></td>
+                        <td>${filters.byType.age || 0}</td>
+                        <td><span class="badge medium">Aggregate</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Style filters</strong></td>
+                        <td>${filters.byType.style || 0}</td>
+                        <td><span class="badge medium">Aggregate</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Day filters</strong></td>
+                        <td>${filters.byType.day || 0}</td>
+                        <td><span class="badge medium">Aggregate</span></td>
+                    </tr>
+                    <tr style="background: #f5f5f5; font-weight: 600;">
+                        <td colspan="3" style="padding: 12px;">Specific Filter Values</td>
+                    </tr>
+                `;
+            }
+            
+            // Show specific filters
+            const topFilters = filters.topFilters || filters;
+            if (topFilters.length > 0) {
+                const maxCount = Math.max(...topFilters.map(f => f.count));
+                
+                html += topFilters.map(filter => {
+                    const popularity = filter.count / maxCount;
+                    const badge = popularity > 0.7 ? 'high' : popularity > 0.4 ? 'medium' : 'low';
+                    const badgeText = popularity > 0.7 ? 'High' : popularity > 0.4 ? 'Medium' : 'Low';
+                    
+                    return `
+                        <tr>
+                            <td>${filter.filter}</td>
+                            <td>${filter.count}</td>
+                            <td><span class="badge ${badge}">${badgeText}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+            
+            tbody.innerHTML = html;
+        }
+
+        function displayPopularClasses(classes) {
+            const tbody = document.querySelector('#classesTable tbody');
+            
+            if (classes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #999;">No class data available</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = classes.map(cls => `
+                <tr>
+                    <td>${cls.class_name || 'Unknown'}</td>
+                    <td>${cls.instructor || 'N/A'}</td>
+                    <td>${cls.day || 'N/A'}</td>
+                    <td>${cls.time || 'N/A'}</td>
+                    <td><strong>${cls.count}</strong></td>
+                </tr>
+            `).join('');
+        }
+
+        function displayVisitorJourneys(journeys) {
+            const container = document.getElementById('journeysContainer');
+            
+            if (journeys.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999;">No visitor data available</p>';
+                return;
+            }
+
+            // Sort by start time, most recent first
+            journeys.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+
+            container.innerHTML = journeys.map(visitor => {
+                const startTime = new Date(visitor.startTime);
+                const timeStr = startTime.toLocaleString('en-US', { 
+                    timeZone: 'America/Los_Angeles',
+                    month: 'short', 
+                    day: 'numeric', 
+                    hour: 'numeric', 
+                    minute: '2-digit'
+                });
+
+                // Track filter state to only show deltas
+                const filterState = {};
+                const processedJourney = [];
+                
+                visitor.journey.forEach(step => {
+                    if (step.event_type === 'session_start') {
+                        processedJourney.push(step);
+                    } else if (step.event_type === 'filter_change') {
+                        const filterType = step.event_data.filter_type;
+                        const filterValue = step.event_data.filter_value;
+                        // Only add if this filter type changed to a different value
+                        if (filterState[filterType] !== filterValue) {
+                            filterState[filterType] = filterValue;
+                            processedJourney.push(step);
+                        }
+                    } else if (step.event_type === 'view_change') {
+                        // Only add if different from previous view_change
+                        const lastView = processedJourney.slice().reverse().find(s => s.event_type === 'view_change');
+                        if (!lastView || lastView.event_data.view_type !== step.event_data.view_type) {
+                            processedJourney.push(step);
+                        }
+                    } else if (step.event_type === 'registration_click') {
+                        // Only add if different class
+                        const lastReg = processedJourney.slice().reverse().find(s => s.event_type === 'registration_click');
+                        if (!lastReg || lastReg.event_data.class_id !== step.event_data.class_id) {
+                            processedJourney.push(step);
+                        }
+                    } else if (step.event_type === 'scroll_depth') {
+                        // Show all scroll milestones (25%, 50%, 75%, 100%)
+                        const depth = step.event_data.depth;
+                        if (depth === 25 || depth === 50 || depth === 75 || depth === 100) {
+                            const lastScroll = processedJourney.slice().reverse().find(s => s.event_type === 'scroll_depth');
+                            if (!lastScroll || lastScroll.event_data.depth < depth) {
+                                processedJourney.push(step);
+                            }
+                        }
+                    }
+                });
+
+                const journeySteps = processedJourney.map((step, index) => {
+                    let icon = '●';
+                    let label = '';
+
+                    if (step.event_type === 'session_start') {
+                        icon = '🚪';
+                        label = 'Visited site';
+                    } else if (step.event_type === 'filter_change') {
+                        icon = '🔍';
+                        const filterType = step.event_data.filter_type.charAt(0).toUpperCase() + step.event_data.filter_type.slice(1);
+                        const filterValue = step.event_data.filter_value;
+                        
+                        // Show "All" selections clearly
+                        if (filterValue === 'all') {
+                            label = `Cleared ${filterType} filter (viewing all)`;
+                        } else {
+                            label = `Searched for ${filterType}: ${filterValue}`;
+                        }
+                    } else if (step.event_type === 'view_change') {
+                        icon = '👁️';
+                        const viewType = step.event_data.view_type === 'master' ? 'Master Classes' : 'Regular Classes';
+                        label = `Viewed ${viewType}`;
+                    } else if (step.event_type === 'registration_click') {
+                        icon = '✅';
+                        label = `Clicked register for "${step.event_data.class_name}"`;
+                    } else if (step.event_type === 'scroll_depth') {
+                        icon = '📜';
+                        label = `Scrolled to ${step.event_data.depth}%`;
+                    }
+
+                    const arrow = index < processedJourney.length - 1 ? '<span style="margin: 0 8px; color: #999;">→</span>' : '';
+
+                    return `
+                        <div class="journey-step ${step.event_type}">
+                            <span class="journey-step-icon">${icon}</span>
+                            <span>${label}</span>
+                        </div>
+                        ${arrow}
+                    `;
+                }).join('');
+
+                const statusBadge = visitor.clickedRegistration 
+                    ? '<span class="badge high">Converted</span>' 
+                    : visitor.usedFilters 
+                    ? '<span class="badge medium">Engaged</span>'
+                    : '<span class="badge low">Browsed</span>';
+
+                return `
+                    <div class="journey-card">
+                        <div class="journey-header">
+                            <span>Visitor ${visitor.session_id}</span>
+                            <span>${statusBadge} <span class="journey-time">${timeStr}</span></span>
+                        </div>
+                        <div class="journey-steps">
+                            ${journeySteps}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function clearAllData() {
+            // Triple confirmation for safety
+            const confirm1 = confirm('⚠️ WARNING: This will permanently delete ALL analytics data.\n\nAre you sure you want to continue?');
+            if (!confirm1) return;
+            
+            const confirm2 = confirm('This action CANNOT be undone!\n\nAll visitor data, sessions, and events will be deleted.\n\nAre you absolutely sure?');
+            if (!confirm2) return;
+            
+            const confirm3 = prompt('Type "DELETE ALL DATA" to confirm (case-sensitive):');
+            if (confirm3 !== 'DELETE ALL DATA') {
+                alert('Confirmation text did not match. Data was NOT deleted.');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_ENDPOINT}/clear`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to clear data');
+                }
+                
+                const result = await response.json();
+                alert(`✅ Success!\n\nDeleted:\n- ${result.sessionsDeleted} sessions\n- ${result.eventsDeleted} events`);
+                
+                // Reload analytics to show empty state
+                loadAnalytics();
+            } catch (error) {
+                console.error('Error clearing data:', error);
+                alert('❌ Failed to clear data. Check console for details.');
+            }
+        }
+
+        // Initialize with last 7 days
+        window.onload = () => {
+            setLastWeek();
+        };
+    </script>
+</body>
+</html>

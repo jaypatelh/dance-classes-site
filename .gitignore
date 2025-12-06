@@ -23,3 +23,7 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Analytics database (local SQLite)
+analytics.db
+analytics.db-journal

@@ -1,6 +1,7 @@
 [build]
   command = "npm run build"
   publish = "./"
+  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "18"
@@ -9,3 +10,9 @@
 # Process environment variables for the build
 [build.processing]
   skip_processing = true
+
+# Redirect API calls to Netlify Functions
+[[redirects]]
+  from = "/api/analytics/*"
+  to = "/.netlify/functions/analytics/:splat"
+  status = 200
