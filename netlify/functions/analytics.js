@@ -244,6 +244,7 @@ exports.handler = async (event, context) => {
                         .from('sessions')
                         .upsert({
                             session_id: evt.session_id,
+                            visitor_id: evt.visitor_id,
                             user_agent: evt.event_data.user_agent,
                             screen_width: evt.event_data.screen_width,
                             screen_height: evt.event_data.screen_height,
@@ -258,6 +259,7 @@ exports.handler = async (event, context) => {
                     .from('events')
                     .insert({
                         session_id: evt.session_id,
+                        visitor_id: evt.visitor_id,
                         event_type: evt.event_type,
                         event_data: evt.event_data,
                         page_url: evt.page_url,
@@ -304,7 +306,7 @@ exports.handler = async (event, context) => {
         if (event.httpMethod === 'GET' && path === '/funnel') {
             const { startDate, endDate } = event.queryStringParameters || {};
 
-            let query = supabase.from('events').select('session_id, event_type, event_data, timestamp');
+            let query = supabase.from('events').select('session_id, visitor_id, event_type, event_data, timestamp');
             if (startDate) query = query.gte('timestamp', startDate);
             if (endDate) query = query.lte('timestamp', endDate);
 

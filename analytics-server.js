@@ -106,6 +106,7 @@ app.post('/api/analytics', async (req, res) => {
                         .from('sessions')
                         .upsert({
                             session_id: event.session_id,
+                            visitor_id: event.visitor_id,
                             user_agent: event.event_data.user_agent,
                             screen_width: event.event_data.screen_width,
                             screen_height: event.event_data.screen_height,
@@ -124,6 +125,7 @@ app.post('/api/analytics', async (req, res) => {
                     .from('events')
                     .insert({
                         session_id: event.session_id,
+                        visitor_id: event.visitor_id,
                         event_type: event.event_type,
                         event_data: event.event_data,
                         page_url: event.page_url,
@@ -139,10 +141,11 @@ app.post('/api/analytics', async (req, res) => {
             for (const event of events) {
                 if (event.event_type === 'session_start') {
                     db.run(
-                        `INSERT OR IGNORE INTO sessions (session_id, user_agent, screen_width, screen_height, referrer, landing_page, created_at) 
-                         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                        `INSERT OR IGNORE INTO sessions (session_id, visitor_id, user_agent, screen_width, screen_height, referrer, landing_page, created_at) 
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
                         [
                             event.session_id,
+                            event.visitor_id,
                             event.event_data.user_agent,
                             event.event_data.screen_width,
                             event.event_data.screen_height,
@@ -154,10 +157,11 @@ app.post('/api/analytics', async (req, res) => {
                 }
                 
                 db.run(
-                    `INSERT INTO events (session_id, event_type, event_data, page_url, timestamp) 
-                     VALUES (?, ?, ?, ?, ?)`,
+                    `INSERT INTO events (session_id, visitor_id, event_type, event_data, page_url, timestamp) 
+                     VALUES (?, ?, ?, ?, ?, ?)`,
                     [
                         event.session_id,
+                        event.visitor_id,
                         event.event_type,
                         JSON.stringify(event.event_data),
                         event.page_url,
@@ -259,7 +263,7 @@ app.get('/api/analytics/funnel', async (req, res) => {
         
         if (USE_SUPABASE) {
             // Query Supabase for funnel data
-            let query = db.from('events').select('session_id, event_type, event_data, timestamp');
+            let query = db.from('events').select('session_id, visitor_id, event_type, event_data, timestamp');
             
             if (startDate) {
                 query = query.gte('timestamp', startDate);
@@ -275,7 +279,7 @@ app.get('/api/analytics/funnel', async (req, res) => {
         } else {
             // Query SQLite
             db.all(
-                `SELECT session_id, event_type, event_data, timestamp FROM events 
+                `SELECT session_id, visitor_id, event_type, event_data, timestamp FROM events 
                  WHERE timestamp >= ? AND timestamp <= ?
                  ORDER BY timestamp ASC`,
                 [startDate || '2000-01-01', endDate || '2100-01-01'],
