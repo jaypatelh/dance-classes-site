@@ -3,6 +3,7 @@
 
 class Analytics {
     constructor() {
+        this.visitorId = this.getOrCreateVisitorId();
         this.sessionId = this.generateSessionId();
         this.sessionStart = Date.now();
         this.isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -18,6 +19,19 @@ class Analytics {
         this.startFlushTimer();
     }
 
+    getOrCreateVisitorId() {
+        // Check if visitor ID exists in localStorage
+        let visitorId = localStorage.getItem('tdc_visitor_id');
+        
+        if (!visitorId) {
+            // Generate new visitor ID
+            visitorId = `visitor-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            localStorage.setItem('tdc_visitor_id', visitorId);
+        }
+        
+        return visitorId;
+    }
+
     generateSessionId() {
         return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     }
@@ -25,6 +39,7 @@ class Analytics {
     async initializeSession() {
         const sessionData = {
             session_id: this.sessionId,
+            visitor_id: this.visitorId,
             user_agent: navigator.userAgent,
             screen_width: window.screen.width,
             screen_height: window.screen.height,
@@ -98,6 +113,7 @@ class Analytics {
     async trackEvent(eventType, eventData, synchronous = false) {
         const event = {
             session_id: this.sessionId,
+            visitor_id: this.visitorId,
             event_type: eventType,
             event_data: eventData,
             timestamp: new Date().toISOString(),

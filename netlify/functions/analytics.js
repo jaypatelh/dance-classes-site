@@ -21,6 +21,7 @@ function calculateFunnel(events) {
         if (!sessionMap.has(event.session_id)) {
             sessionMap.set(event.session_id, {
                 session_id: event.session_id,
+                visitor_id: event.visitor_id || 'unknown',
                 visited: false,
                 usedFilters: false,
                 clickedRegistration: false,
@@ -34,6 +35,11 @@ function calculateFunnel(events) {
         }
         
         const session = sessionMap.get(event.session_id);
+        
+        // Update visitor_id if available (in case first event didn't have it)
+        if (event.visitor_id) {
+            session.visitor_id = event.visitor_id;
+        }
         
         // Add to journey
         session.journey.push({
@@ -116,6 +122,7 @@ function calculateFunnel(events) {
         popularClasses: getPopularClasses(activeSessions),
         activeJourneys: activeSessions.map(s => ({
             session_id: s.session_id,
+            visitor_id: s.visitor_id,
             session_id_display: s.session_id.substring(0, 8) + '...',
             startTime: s.startTime,
             journey: s.journey,
@@ -125,6 +132,7 @@ function calculateFunnel(events) {
         })),
         inactiveJourneysData: inactiveSessions.map(s => ({
             session_id: s.session_id,
+            visitor_id: s.visitor_id,
             session_id_display: s.session_id.substring(0, 8) + '...',
             startTime: s.startTime,
             journey: s.journey,

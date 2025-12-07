@@ -1259,7 +1259,10 @@
                     <div class="journey-card">
                         <div class="journey-header">
                             <div class="journey-header-left">
-                                <span>Session ${visitor.session_id}</span>
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <span style="font-size: 11px; color: #999;">Visitor: ${visitor.visitor_id || 'unknown'}</span>
+                                    <span>Session: ${visitor.session_id}</span>
+                                </div>
                             </div>
                             <div class="journey-header-right">
                                 ${statusBadge}
@@ -1342,7 +1345,10 @@
                     <div class="journey-card">
                         <div class="journey-header">
                             <div class="journey-header-left">
-                                <span>Session ${visitor.session_id}</span>
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <span style="font-size: 11px; color: #999;">Visitor: ${visitor.visitor_id || 'unknown'}</span>
+                                    <span>Session: ${visitor.session_id}</span>
+                                </div>
                             </div>
                             <div class="journey-header-right">
                                 <span class="badge low">Inactive</span>
