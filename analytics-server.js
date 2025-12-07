@@ -361,16 +361,42 @@ function calculateFunnel(events) {
     
     const allSessions = Array.from(sessionMap.values());
     
-    // Calculate session duration for each session
+    // Calculate session duration for each session (excluding away time)
     allSessions.forEach(session => {
-        if (session.journey.length > 0) {
-            const firstEvent = session.journey[0];
-            const lastEvent = session.journey[session.journey.length - 1];
-            const durationMs = new Date(lastEvent.timestamp) - new Date(firstEvent.timestamp);
-            session.duration = Math.max(0, Math.round(durationMs / 1000)); // Duration in seconds
-        } else {
+        if (session.journey.length === 0) {
             session.duration = 0;
+            return;
         }
+        
+        let totalActiveMs = 0;
+        let lastActiveTimestamp = null;
+        
+        session.journey.forEach(event => {
+            if (event.event_type === 'page_hidden') {
+                // Mark the end of an active period
+                if (lastActiveTimestamp) {
+                    totalActiveMs += new Date(event.timestamp) - new Date(lastActiveTimestamp);
+                    lastActiveTimestamp = null;
+                }
+            } else if (event.event_type === 'page_visible') {
+                // Start a new active period
+                lastActiveTimestamp = event.timestamp;
+            } else {
+                // Any other event (session_start, filter_change, scroll, etc.)
+                if (!lastActiveTimestamp) {
+                    // Start tracking from this event
+                    lastActiveTimestamp = event.timestamp;
+                }
+            }
+        });
+        
+        // If there's an ongoing active period (no page_hidden at the end), count it
+        if (lastActiveTimestamp) {
+            const lastEvent = session.journey[session.journey.length - 1];
+            totalActiveMs += new Date(lastEvent.timestamp) - new Date(lastActiveTimestamp);
+        }
+        
+        session.duration = Math.max(0, Math.round(totalActiveMs / 1000)); // Duration in seconds
     });
     
     // Filter out inactive sessions (no filters AND no scrolling)

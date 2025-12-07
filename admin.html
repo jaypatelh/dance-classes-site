@@ -288,6 +288,66 @@
             font-weight: normal;
         }
 
+        .raw-events-toggle {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #667eea;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+
+        .raw-events-toggle:hover {
+            background: #ebebeb;
+        }
+
+        .raw-events-toggle .arrow {
+            font-size: 10px;
+            transition: transform 0.3s;
+        }
+
+        .raw-events-toggle.expanded .arrow {
+            transform: rotate(180deg);
+        }
+
+        .raw-events-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            margin-top: 10px;
+        }
+
+        .raw-events-content.expanded {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .raw-event-item {
+            padding: 8px;
+            margin: 4px 0;
+            background: #fafafa;
+            border-left: 3px solid #ddd;
+            font-size: 11px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .raw-event-item .event-type {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .raw-event-item .event-time {
+            color: #999;
+            font-size: 10px;
+        }
+
         .journey-step.session_start {
             border-color: #4caf50;
             background: #f1f8f4;
@@ -817,6 +877,13 @@
             content.classList.toggle('collapsed');
         }
 
+        // Toggle raw events display
+        function toggleRawEvents(toggleElement) {
+            toggleElement.classList.toggle('expanded');
+            const content = toggleElement.nextElementSibling;
+            content.classList.toggle('expanded');
+        }
+
         // Helper to format duration in seconds to human-readable format
         function formatDuration(seconds) {
             if (seconds < 60) {
@@ -1255,6 +1322,35 @@
                     ? `<span class="badge" style="background: #9c27b0; color: white;">⏱️ ${formatDuration(visitor.duration)}</span>`
                     : '';
 
+                // Generate raw events HTML
+                const rawEventsHtml = visitor.journey.map(step => {
+                    const stepTime = new Date(step.timestamp);
+                    const stepTimeStr = stepTime.toLocaleTimeString('en-US', {
+                        timeZone: 'America/Los_Angeles',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                    
+                    let eventDetails = '';
+                    if (step.event_type === 'filter_change') {
+                        eventDetails = ` - ${step.event_data.filter_type}: ${step.event_data.filter_value}`;
+                    } else if (step.event_type === 'scroll_depth') {
+                        eventDetails = ` - ${step.event_data.depth}%`;
+                    } else if (step.event_type === 'view_change') {
+                        eventDetails = ` - ${step.event_data.view_type}`;
+                    } else if (step.event_type === 'registration_click') {
+                        eventDetails = ` - ${step.event_data.class_name}`;
+                    }
+                    
+                    return `
+                        <div class="raw-event-item">
+                            <span class="event-type">${step.event_type}</span>${eventDetails}
+                            <div class="event-time">${stepTimeStr}</div>
+                        </div>
+                    `;
+                }).join('');
+
                 return `
                     <div class="journey-card">
                         <div class="journey-header">
@@ -1273,6 +1369,13 @@
                         </div>
                         <div class="journey-steps">
                             ${journeySteps}
+                        </div>
+                        <div class="raw-events-toggle" onclick="toggleRawEvents(this)">
+                            <span>Show all events (${visitor.journey.length})</span>
+                            <span class="arrow">▼</span>
+                        </div>
+                        <div class="raw-events-content">
+                            ${rawEventsHtml}
                         </div>
                     </div>
                 `;
@@ -1341,6 +1444,29 @@
                     ? `<span class="badge" style="background: #9c27b0; color: white;">⏱️ ${formatDuration(visitor.duration)}</span>`
                     : '';
 
+                // Generate raw events HTML
+                const rawEventsHtml = visitor.journey.map(step => {
+                    const stepTime = new Date(step.timestamp);
+                    const stepTimeStr = stepTime.toLocaleTimeString('en-US', {
+                        timeZone: 'America/Los_Angeles',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                    
+                    let eventDetails = '';
+                    if (step.event_type === 'view_change') {
+                        eventDetails = ` - ${step.event_data.view_type}`;
+                    }
+                    
+                    return `
+                        <div class="raw-event-item">
+                            <span class="event-type">${step.event_type}</span>${eventDetails}
+                            <div class="event-time">${stepTimeStr}</div>
+                        </div>
+                    `;
+                }).join('');
+
                 return `
                     <div class="journey-card">
                         <div class="journey-header">
@@ -1359,6 +1485,13 @@
                         </div>
                         <div class="journey-steps">
                             ${journeySteps}
+                        </div>
+                        <div class="raw-events-toggle" onclick="toggleRawEvents(this)">
+                            <span>Show all events (${visitor.journey.length})</span>
+                            <span class="arrow">▼</span>
+                        </div>
+                        <div class="raw-events-content">
+                            ${rawEventsHtml}
                         </div>
                     </div>
                 `;
