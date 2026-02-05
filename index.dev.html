@@ -21,10 +21,7 @@
     <!-- View Toggle Section -->
     <div class="view-toggle-section">
         <div class="toggle-buttons">
-            <button id="regular-classes-btn" class="toggle-btn active">
-                <i class="fas fa-calendar-week"></i>
-                Regular Classes
-            </button>
+            <!-- Season tabs will be dynamically added here -->
             <button id="master-classes-btn" class="toggle-btn">
                 <i class="fas fa-star"></i>
                 Master Classes
@@ -62,16 +59,9 @@
         </div>
         
         <div class="filter-group">
-            <label for="day-filter">Day:</label>
-            <select id="day-filter">
-                <option value="">All Days</option>
-                <option value="monday">Monday</option>
-                <option value="tuesday">Tuesday</option>
-                <option value="wednesday">Wednesday</option>
-                <option value="thursday">Thursday</option>
-                <option value="friday">Friday</option>
-                <option value="saturday">Saturday</option>
-                <option value="sunday">Sunday</option>
+            <label for="day-filter">Season:</label>
+            <select id="day-filter" disabled>
+                <option value="">Current Season</option>
             </select>
         </div>
         

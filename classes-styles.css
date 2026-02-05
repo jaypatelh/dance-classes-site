@@ -100,21 +100,32 @@ html, body {
     background: var(--light-gray);
     padding: 0.15rem;
     border-radius: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .toggle-btn {
-    padding: 0.5rem 1rem;
+    padding: 0.4rem 0.8rem;
     border: none;
     background: transparent;
-    color: var(--secondary-color);
-    font-weight: 500;
-    border-radius: 6px;
+    color: var(--text-color);
     cursor: pointer;
+    border-radius: 6px;
     transition: all 0.3s ease;
+    font-size: 0.8rem;
+    font-weight: 500;
+    flex: 0 0 auto;
+    min-width: 100px;
+    max-width: 200px;
+    height: 44px;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.4rem;
-    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.1;
 }
 
 .toggle-btn:hover {
@@ -129,6 +140,15 @@ html, body {
 
 .toggle-btn i {
     font-size: 0.8rem;
+    flex-shrink: 0;
+    color: var(--accent-color);
+}
+
+.toggle-btn span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
 }
 
 /* Filters Section */
@@ -136,7 +156,7 @@ html, body {
     padding: 1rem;
     margin-bottom: 1rem;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 1rem;
     align-items: end;
     background: var(--card-bg);

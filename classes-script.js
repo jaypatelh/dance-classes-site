@@ -1,10 +1,11 @@
 // Classes Page Script - Standalone class grid functionality
 
 // Global variables
-let allClasses = [];
+let allClasses = {};
 let filteredClasses = [];
 let masterClasses = [];
-let currentView = 'regular'; // 'regular' or 'master'
+let currentView = 'regular'; // 'regular', 'master', or season name
+let seasons = [];
 let filtersInitialized = false; // Track if filters have been set by user
 
 // Google Sheets configuration
@@ -20,12 +21,12 @@ window.onload = async function() {
     await loadClassesFromGoogleSheets();
 
     // Now that data is loaded, handle the initial view based on the URL hash
-    const initialView = window.location.hash.substring(1) || 'regular';
+    const initialView = window.location.hash.substring(1) || (seasons.length > 0 ? seasons[0] : '');
     switchView(initialView, true); // true to prevent re-updating the hash
 
     // Add a listener to handle back/forward navigation
     window.addEventListener('hashchange', () => {
-        const newView = window.location.hash.substring(1) || 'regular';
+        const newView = window.location.hash.substring(1) || (seasons.length > 0 ? seasons[0] : '');
         // Call switchView, but don't treat it as the initial page load
         switchView(newView, true); 
     });
@@ -58,32 +59,46 @@ async function loadClassesFromGoogleSheets() {
         
         console.log('Available sheets:', sheets.map(s => s.properties.title));
         
-        // Filter to only Monday through Saturday sheets
-        const classSheets = sheets.filter(sheet => {
-            const title = sheet.properties.title.toLowerCase();
-            return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].includes(title);
+        // Filter to season tabs (exclude Call Bookings and Call Availabilities)
+        const seasonSheets = sheets.filter(sheet => {
+            const title = sheet.properties.title;
+            return !['Call Bookings', 'Call Availabilities'].includes(title);
         });
         
-        console.log('Class sheets found:', classSheets.map(s => s.properties.title));
+        console.log('Season sheets found:', seasonSheets.map(s => s.properties.title));
         
-        // Load classes from all relevant sheets
-        const allClassPromises = classSheets.map(sheet => 
+        // Store season names and create season mapping
+        seasons = seasonSheets.map(sheet => sheet.properties.title);
+        
+        // Load classes from all season sheets
+        const allClassPromises = seasonSheets.map(sheet => 
             loadClassesFromSheet(sheet.properties.title, apiKey)
         );
         
         const classArrays = await Promise.all(allClassPromises);
-        allClasses = classArrays.flat().filter(cls => cls && cls.name);
         
-        console.log(`Loaded ${allClasses.length} regular classes total`);
+        // Organize classes by season
+        seasons.forEach((season, index) => {
+            allClasses[season] = classArrays[index] || [];
+            console.log(`Loaded ${allClasses[season].length} classes for ${season}`);
+        });
         
         // Load Master Classes
         await loadMasterClasses(apiKey);
         
         // Display all classes initially
-        filteredClasses = [...allClasses];
+        if (seasons.length > 0) {
+            filteredClasses = [...allClasses[seasons[0]]];
+        } else {
+            filteredClasses = [];
+        }
         
         // Analyze age ranges and create buckets
         createAgeBuckets();
+        
+        // Create dynamic season tabs
+        createSeasonTabs();
+        
         displayClasses();
         
     } catch (error) {
@@ -97,7 +112,7 @@ async function loadClassesFromGoogleSheets() {
 // Load classes from a specific sheet
 async function loadClassesFromSheet(sheetName, apiKey) {
     try {
-        const range = `${sheetName}!A:H`; // A-H columns (including Class ID in column H)
+        const range = `${sheetName}!A:Z`; // Get all columns to find class ID
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_SHEET_ID}/values/${encodeURIComponent(range)}?key=${apiKey}`;
         
         console.log(`Loading classes from sheet: ${sheetName}`);
@@ -116,12 +131,27 @@ async function loadClassesFromSheet(sheetName, apiKey) {
             return [];
         }
         
+        // Find class ID column from headers
+        const headers = rows[0] || [];
+        const classIdColumnIndex = findClassIdColumn(headers);
+        const dayColumnIndex = findDayColumn(headers);
+        const dateColumnIndex = findDateColumn(headers);
+        
+        console.log(`Class ID column index for ${sheetName}: ${classIdColumnIndex}`);
+        console.log(`Day column index for ${sheetName}: ${dayColumnIndex}`);
+        console.log(`Date column index for ${sheetName}: ${dateColumnIndex}`);
+        
         // Parse classes from rows (skip header row)
         const classes = [];
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
             if (row.length >= 4 && row[0] && row[3]) { // Ensure name and time exist
-                console.log('Raw row data:', row);
+                console.log('Raw row data from', sheetName, ':', row);
+                
+                const classId = extractClassId(row, classIdColumnIndex);
+                const day = dayColumnIndex >= 0 ? (row[dayColumnIndex] || '').toString().trim() : '';
+                const date = dateColumnIndex >= 0 ? (row[dateColumnIndex] || '').toString().trim() : '';
+                
                 const classObj = {
                     name: row[0] || '',           // A: Class Name
                     description: row[1] || '',    // B: Description  
@@ -129,13 +159,14 @@ async function loadClassesFromSheet(sheetName, apiKey) {
                     time: row[3] || '',           // D: Time
                     ages: row[4] || 'All Ages',   // E: Ages
                     instructor: row[5] || '',     // F: Instructor
-                    date: row[6] || '',           // G: Date (if applicable)
-                    classId: row[7] || '',        // H: Class ID
-                    day: sheetName,
+                    date: date,                   // Use actual Date field
+                    classId: classId,             // Found class ID
+                    season: sheetName,
+                    day: day,                    // Use actual Day field
                     styles: extractDanceStyles(row[0] || ''),
                     ageBucket: parseAgeBucket(row[4] || 'All Ages')
                 };
-                console.log('Processed class:', classObj.name, 'ages:', classObj.ages, 'time:', classObj.time, 'classId:', classObj.classId);
+                console.log('Processed class:', classObj.name, 'classId:', classObj.classId, 'day:', classObj.day, 'date:', classObj.date, 'season:', classObj.season, 'hasRegisterButton:', !!classObj.classId);
                 classes.push(classObj);
             }
         }
@@ -147,6 +178,107 @@ async function loadClassesFromSheet(sheetName, apiKey) {
         console.error(`Error loading sheet ${sheetName}:`, error);
         return [];
     }
+}
+
+// Find Date column by looking for common headers
+function findDateColumn(headers) {
+    const dateHeaders = ['date', 'class date', 'event date', 'start date'];
+    
+    for (let i = 0; i < headers.length; i++) {
+        const header = (headers[i] || '').toLowerCase().trim();
+        if (dateHeaders.includes(header)) {
+            console.log(`Found Date column at index ${i} with header: "${headers[i]}"`);
+            return i;
+        }
+    }
+    
+    // If no header found, return -1
+    console.log('No Date column found');
+    return -1;
+}
+
+// Find Day column by looking for common headers
+function findDayColumn(headers) {
+    const dayHeaders = ['day', 'weekday', 'schedule day', 'class day'];
+    
+    for (let i = 0; i < headers.length; i++) {
+        const header = (headers[i] || '').toLowerCase().trim();
+        if (dayHeaders.includes(header)) {
+            console.log(`Found Day column at index ${i} with header: "${headers[i]}"`);
+            return i;
+        }
+    }
+    
+    // If no header found, return -1
+    console.log('No Day column found');
+    return -1;
+}
+
+// Find class ID column by looking for common headers or numeric patterns
+function findClassIdColumn(headers) {
+    // First try to find by common header names
+    const classIdHeaders = ['class id', 'classid', 'id', 'class_id', 'registration id', 'reg id'];
+    
+    for (let i = 0; i < headers.length; i++) {
+        const header = (headers[i] || '').toLowerCase().trim();
+        if (classIdHeaders.includes(header)) {
+            console.log(`Found class ID column at index ${i} with header: "${headers[i]}"`);
+            return i;
+        }
+    }
+    
+    // If no header found, look for columns with numeric IDs (common pattern)
+    for (let i = 0; i < headers.length; i++) {
+        const header = headers[i] || '';
+        // Check if header looks like a numeric ID (e.g., "12345", "CID-123", etc.)
+        if (/^\d+$/.test(header) || /^cid-?\d+$/i.test(header) || /^class-?\d+$/i.test(header)) {
+            console.log(`Found class ID column at index ${i} with numeric pattern: "${header}"`);
+            return i;
+        }
+    }
+    
+    // If still not found, return -1 to indicate no class ID column
+    console.log('No class ID column found, checking all columns for numeric values...');
+    return -1;
+}
+
+// Extract class ID from a row by checking multiple columns
+function extractClassId(row, classIdColumnIndex) {
+    // If we found a specific class ID column, use it
+    if (classIdColumnIndex >= 0 && row[classIdColumnIndex]) {
+        return row[classIdColumnIndex].toString().trim();
+    }
+    
+    // Otherwise, search all columns for class ID patterns
+    for (let i = 0; i < row.length; i++) {
+        const value = (row[i] || '').toString().trim();
+        // Look for numeric patterns that could be class IDs
+        if (value && /^\d+$/.test(value)) {
+            console.log(`Found potential class ID in column ${i}: ${value}`);
+            return value;
+        }
+        // Look for patterns like "CID-123" or "CLASS-123"
+        if (value && /^cid-?\d+$/i.test(value) || /^class-?\d+$/i.test(value)) {
+            console.log(`Found potential class ID in column ${i}: ${value}`);
+            return value;
+        }
+    }
+    
+    return '';
+}
+
+// Extract day information from class name
+function extractDayFromClass(className) {
+    const name = className.toLowerCase();
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    
+    for (const day of days) {
+        if (name.includes(day)) {
+            return day.charAt(0).toUpperCase() + day.slice(1);
+        }
+    }
+    
+    return '';
 }
 
 // Extract dance styles from class name
@@ -196,14 +328,41 @@ function parseAgeBucket(ageString) {
     return 'all-ages';
 }
 
+// Create dynamic season tabs
+function createSeasonTabs() {
+    const toggleSection = document.querySelector('.view-toggle-section .toggle-buttons');
+    
+    // Clear existing tabs
+    toggleSection.innerHTML = '';
+    
+    // Add season tabs
+    seasons.forEach((season, index) => {
+        const button = document.createElement('button');
+        button.id = `season-${season.toLowerCase().replace(/\s+/g, '-')}-btn`;
+        button.className = 'toggle-btn';
+        if (index === 0) button.classList.add('active'); // First season is active by default
+        
+        button.innerHTML = `
+            <i class="fas fa-calendar-alt"></i>
+            <span>${season}</span>
+        `;
+        
+        button.addEventListener('click', () => switchView(season));
+        toggleSection.appendChild(button);
+    });
+}
+
 // Create age buckets from all classes
 function createAgeBuckets() {
     const buckets = new Set();
     
-    allClasses.forEach(cls => {
-        const bucket = parseAgeBucket(cls.ages);
-        buckets.add(bucket);
-        cls.ageBucket = bucket; // Add bucket to class object
+    // Collect buckets from all seasons
+    Object.values(allClasses).forEach(seasonClasses => {
+        seasonClasses.forEach(cls => {
+            const bucket = parseAgeBucket(cls.ages);
+            buckets.add(bucket);
+            cls.ageBucket = bucket; // Add bucket to class object
+        });
     });
     
     console.log('Age buckets found:', Array.from(buckets));
@@ -244,7 +403,7 @@ function updateAgeFilterOptions(buckets) {
 function setupFilters() {
     const ageFilter = document.getElementById('age-filter');
     const styleFilter = document.getElementById('style-filter');
-    const dayFilter = document.getElementById('day-filter');
+    // Day filter is now disabled since seasons are handled by tabs
     
     ageFilter.addEventListener('change', () => {
         if (window.analytics) {
@@ -258,21 +417,15 @@ function setupFilters() {
         }
         applyFilters();
     });
-    dayFilter.addEventListener('change', () => {
-        if (window.analytics) {
-            window.analytics.trackFilterChange('day', dayFilter.value || 'all');
-        }
-        applyFilters();
-    });
 }
 
 // Apply filters to classes
 function applyFilters() {
     const ageFilter = document.getElementById('age-filter').value;
     const styleFilter = document.getElementById('style-filter').value;
-    const dayFilter = document.getElementById('day-filter').value;
+    // Day filter removed - seasons are handled by tabs
     
-    filteredClasses = allClasses.filter(cls => {
+    filteredClasses = (allClasses[currentView] || []).filter(cls => {
         // Age filter - now using buckets
         if (ageFilter && cls.ageBucket !== ageFilter) {
             return false;
@@ -283,10 +436,7 @@ function applyFilters() {
             return false;
         }
         
-        // Day filter
-        if (dayFilter && cls.day.toLowerCase() !== dayFilter.toLowerCase()) {
-            return false;
-        }
+        // No day filter needed - classes are already filtered by season tab
         
         return true;
     });
@@ -317,7 +467,7 @@ function displayClasses() {
             <div class="class-header">
                 <h3>${cls.name}</h3>
                 ${cls.classId ? `
-                    <button class="register-btn" onclick='openRegistration("${cls.classId}", "${cls.day}", ${JSON.stringify({name: cls.name, day: cls.day, time: cls.time, style: cls.styles ? cls.styles[0] : "Unknown", instructor: cls.instructor || "Unknown"}).replace(/'/g, "&apos;")})'>
+                    <button class="register-btn" onclick='openRegistration("${cls.classId}", "${cls.day || cls.season}", ${JSON.stringify({name: cls.name, day: cls.day || cls.season, time: cls.time, style: cls.styles ? cls.styles[0] : "Unknown", instructor: cls.instructor || "Unknown"}).replace(/'/g, "&apos;")})'>
                         <i class="fas fa-user-plus"></i>
                         Register
                     </button>
@@ -328,10 +478,18 @@ function displayClasses() {
                     <i class="fas fa-clock"></i>
                     <span>${cls.time}</span>
                 </div>
-                <div class="class-info-item">
-                    <i class="fas fa-calendar-day"></i>
-                    <span>${cls.day}</span>
-                </div>
+                ${cls.date ? `
+                    <div class="class-info-item">
+                        <i class="fas fa-calendar"></i>
+                        <span>${cls.date}</span>
+                    </div>
+                ` : ''}
+                ${cls.day ? `
+                    <div class="class-info-item">
+                        <i class="fas fa-calendar-day"></i>
+                        <span>Every ${cls.day}</span>
+                    </div>
+                ` : ''}
                 <div class="class-info-item">
                     <i class="fas fa-users"></i>
                     <span>${cls.ages}</span>
@@ -412,11 +570,6 @@ function openRegistration(classId, classDay, classData = {}) {
     }
     
     let registrationUrl = `https://app.thestudiodirector.com/thedancecompanyoflos/portal.sd?page=Enroll&cident=${classId}`;
-    
-    // Add class_day parameter if available
-    if (classDay) {
-        registrationUrl += `&class_day=${encodeURIComponent(classDay)}`;
-    }
     
     window.open(registrationUrl, '_blank');
 }
@@ -508,20 +661,16 @@ async function loadMasterClasses(apiKey) {
 
 // Setup view toggle functionality
 function setupViewToggle() {
-    const regularBtn = document.getElementById('regular-classes-btn');
-    const masterBtn = document.getElementById('master-classes-btn');
-    
-    regularBtn.addEventListener('click', () => switchView('regular'));
-    masterBtn.addEventListener('click', () => switchView('master'));
+    // This will be handled dynamically by createSeasonTabs()
+    console.log('View toggle will be set up after seasons are loaded');
 }
 
-// Switch between regular and master class views
+// Switch between season views
 function switchView(view, isInitialLoad = false) {
     if (currentView === view && !isInitialLoad) return; // Avoid unnecessary re-renders
 
-    const regularBtn = document.getElementById('regular-classes-btn');
-    const masterBtn = document.getElementById('master-classes-btn');
     const filtersSection = document.getElementById('filters-section');
+    const toggleButtons = document.querySelectorAll('.toggle-btn');
 
     currentView = view;
     
@@ -530,18 +679,16 @@ function switchView(view, isInitialLoad = false) {
         window.analytics.trackViewChange(view);
     }
 
-    if (view === 'master') {
-        masterBtn.classList.add('active');
-        regularBtn.classList.remove('active');
-        filtersSection.style.display = 'none';
-        displayMasterClasses();
-    } else {
-        regularBtn.classList.add('active');
-        masterBtn.classList.remove('active');
-        filtersSection.style.display = 'grid';
-        filteredClasses = [...allClasses];
-        applyFilters();
-    }
+    // Remove active class from all buttons
+    toggleButtons.forEach(btn => btn.classList.remove('active'));
+    
+    // Activate season button
+    const seasonBtn = document.getElementById(`season-${view.toLowerCase().replace(/\s+/g, '-')}-btn`);
+    if (seasonBtn) seasonBtn.classList.add('active');
+    
+    filtersSection.style.display = 'grid';
+    filteredClasses = [...(allClasses[view] || [])];
+    applyFilters();
 
     // Update the URL hash without triggering a page reload
     if (!isInitialLoad) {
