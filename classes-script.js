@@ -8,6 +8,9 @@ let currentView = 'regular'; // 'regular', 'master', or season name
 let seasons = [];
 let filtersInitialized = false; // Track if filters have been set by user
 
+// Blacklist of season names to hide
+const SEASON_BLACKLIST = ['Comp dancers  2025-2026-and Info'];
+
 // Google Sheets configuration
 const GOOGLE_SHEET_ID = '1oiD4w17jVWc9_4NDAIFZpfWa4Unli5wovxxVUqzyn88';
 
@@ -59,10 +62,11 @@ async function loadClassesFromGoogleSheets() {
         
         console.log('Available sheets:', sheets.map(s => s.properties.title));
         
-        // Filter to season tabs (exclude Call Bookings and Call Availabilities)
+        // Filter to season tabs (exclude Call Bookings, Call Availabilities, and blacklisted seasons)
         const seasonSheets = sheets.filter(sheet => {
             const title = sheet.properties.title;
-            return !['Call Bookings', 'Call Availabilities'].includes(title);
+            return !['Call Bookings', 'Call Availabilities'].includes(title) && 
+                   !SEASON_BLACKLIST.includes(title);
         });
         
         console.log('Season sheets found:', seasonSheets.map(s => s.properties.title));
