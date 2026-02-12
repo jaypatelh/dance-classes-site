@@ -471,7 +471,7 @@ function displayClasses() {
             <div class="class-header">
                 <h3>${cls.name}</h3>
                 ${cls.classId ? `
-                    <button class="register-btn" onclick='openRegistration("${cls.classId}", "${cls.day || cls.season}", ${JSON.stringify({name: cls.name, day: cls.day || cls.season, time: cls.time, style: cls.styles ? cls.styles[0] : "Unknown", instructor: cls.instructor || "Unknown"}).replace(/'/g, "&apos;")})'>
+                    <button class="register-btn" onclick='openRegistration("${cls.classId}", "${cls.day || cls.season}", ${JSON.stringify({name: cls.name, day: cls.day || cls.season, time: cls.time, style: cls.styles ? cls.styles[0] : "Unknown", instructor: cls.instructor || "Unknown", date: cls.date}).replace(/'/g, "&apos;")})'>
                         <i class="fas fa-user-plus"></i>
                         Register
                     </button>
@@ -574,6 +574,11 @@ function openRegistration(classId, classDay, classData = {}) {
     }
     
     let registrationUrl = `https://app.thestudiodirector.com/thedancecompanyoflos/portal.sd?page=Enroll&cident=${classId}`;
+    
+    // Add date parameter if class has a date value
+    if (classData.date) {
+        registrationUrl += `&class_day=${encodeURIComponent(classData.date)}`;
+    }
     
     window.open(registrationUrl, '_blank');
 }
@@ -726,7 +731,7 @@ function displayMasterClasses() {
                     Master Class
                 </div>
                 ${cls.classId ? `
-                    <button class="register-btn" onclick='openRegistration("${cls.classId}", "${cls.date}", ${JSON.stringify({name: cls.name, day: cls.date, time: cls.time || "TBD", style: "Master Class", instructor: cls.choreographer || "Guest"}).replace(/'/g, "&apos;")})'>
+                    <button class="register-btn" onclick='openRegistration("${cls.classId}", "${cls.date}", ${JSON.stringify({name: cls.name, day: cls.date, time: cls.time || "TBD", style: "Master Class", instructor: cls.choreographer || "Guest", date: cls.date}).replace(/'/g, "&apos;")})'>
                         <i class="fas fa-user-plus"></i>
                         Register
                     </button>
