@@ -93,6 +93,27 @@ async function loadClassesFromGoogleSheets() {
         // Display all classes initially
         if (seasons.length > 0) {
             filteredClasses = [...allClasses[seasons[0]]];
+            
+            // Sort initial classes by day of week (Monday through Sunday)
+            const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            filteredClasses.sort((a, b) => {
+                const dayA = a.day || '';
+                const dayB = b.day || '';
+                const indexA = dayOrder.indexOf(dayA);
+                const indexB = dayOrder.indexOf(dayB);
+                
+                // If both days are in the order list, sort by that order
+                if (indexA !== -1 && indexB !== -1) {
+                    return indexA - indexB;
+                }
+                
+                // If only one day is in the order list, put it first
+                if (indexA !== -1) return -1;
+                if (indexB !== -1) return 1;
+                
+                // If neither day is in the order list, sort alphabetically
+                return dayA.localeCompare(dayB);
+            });
         } else {
             filteredClasses = [];
         }
@@ -445,6 +466,27 @@ function applyFilters() {
         return true;
     });
     
+    // Sort filtered classes by day of week (Monday through Sunday)
+    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    filteredClasses.sort((a, b) => {
+        const dayA = a.day || '';
+        const dayB = b.day || '';
+        const indexA = dayOrder.indexOf(dayA);
+        const indexB = dayOrder.indexOf(dayB);
+        
+        // If both days are in the order list, sort by that order
+        if (indexA !== -1 && indexB !== -1) {
+            return indexA - indexB;
+        }
+        
+        // If only one day is in the order list, put it first
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        
+        // If neither day is in the order list, sort alphabetically
+        return dayA.localeCompare(dayB);
+    });
+    
     displayClasses();
 }
 
@@ -491,7 +533,7 @@ function displayClasses() {
                 ${cls.day ? `
                     <div class="class-info-item">
                         <i class="fas fa-calendar-day"></i>
-                        <span>Every ${cls.day}</span>
+                        <span>${cls.day}</span>
                     </div>
                 ` : ''}
                 <div class="class-info-item">
@@ -697,6 +739,28 @@ function switchView(view, isInitialLoad = false) {
     
     filtersSection.style.display = 'grid';
     filteredClasses = [...(allClasses[view] || [])];
+    
+    // Sort regular classes by day of week (Monday through Sunday)
+    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    filteredClasses.sort((a, b) => {
+        const dayA = a.day || '';
+        const dayB = b.day || '';
+        const indexA = dayOrder.indexOf(dayA);
+        const indexB = dayOrder.indexOf(dayB);
+        
+        // If both days are in the order list, sort by that order
+        if (indexA !== -1 && indexB !== -1) {
+            return indexA - indexB;
+        }
+        
+        // If only one day is in the order list, put it first
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        
+        // If neither day is in the order list, sort alphabetically
+        return dayA.localeCompare(dayB);
+    });
+    
     applyFilters();
 
     // Update the URL hash without triggering a page reload
